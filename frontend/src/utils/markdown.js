@@ -2,6 +2,7 @@ import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 import mk from '@iktakahiro/markdown-it-katex';
 import DOMPurify from 'dompurify';
+import { t } from './i18n';
 
 const md = new MarkdownIt({
   html: true,
@@ -28,7 +29,7 @@ md.renderer.rules.fence = function (tokens, idx, options, env, self) {
   }
 
   const encodedContent = encodeURIComponent(content);
-  const copyBtn = `<button class="code-copy-btn" data-code="${encodedContent}">复制代码</button>`;
+  const copyBtn = `<button class="code-copy-btn" data-code="${encodedContent}">${t('copyCode')}</button>`;
   const headerHtml = `<div class="code-block-header"><span>${lang || 'code'}</span>${copyBtn}</div>`;
 
   return `${headerHtml}<pre class="hljs"><code>${highlightedContent}</code></pre>`;
@@ -36,5 +37,5 @@ md.renderer.rules.fence = function (tokens, idx, options, env, self) {
 
 export function parseMarkdown(content) {
   const rawHtml = md.render(content);
-  return DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-code'] }); 
+  return DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-code'] });
 }

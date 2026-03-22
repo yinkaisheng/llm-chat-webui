@@ -113,8 +113,9 @@ Retrieves all local sessions ordered by modification time (descending).
   "message": "success",
   "data": [
     {
-      "id": "sess_1abc",
-      "title": "Vue3 Component Guide",
+      "id": "1774167627186344",
+      "title": "Introduction",
+      "create_time": "2026-03-22 16:20:27.199",
       "update_time": 1715423851.0
     }
   ]
@@ -125,12 +126,43 @@ Retrieves all local sessions ordered by modification time (descending).
 Retrieves full chat history for a specific `session_id`.
 - **URL**: `/api/sessions/{session_id}`
 - **Method**: `GET`
+- **Response Format**:
+```json
+{
+  "code": 0,
+  "data": {
+    "title": "Session Title",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello", 
+        "time": "2026-03-22 10:00:00"
+      },
+      {
+        "role": "assistant",
+        "content": "Hi!",
+        "reasoning_content": "Internal thought...",
+        "time": "2026-03-22 10:00:01",
+        "meta": {
+           "ttft": 0.5,
+           "total_time": 2.0,
+           "total_chars": 3,
+           "speed_chars": 1.5,
+           "total_tokens": null,
+           "speed_tokens": null
+        }
+      }
+    ]
+  }
+}
+```
+*Note: `content` can be a string or an array of objects for multimodal input (e.g., `[{"type": "text", "text": "..."}, {"type": "image_url", "image_url": {"url": "..."}}]`).*
 
 ### 8. Save or Update Session
 Overwrites JSON data for a specific `session_id`.
 - **URL**: `/api/sessions/{session_id}`
 - **Method**: `POST`
-- **Request Body**: Same structure as session data.
+- **Request Body**: Same structure as the `data` field in **Get Session Details**.
 
 ### 9. Delete Single Session
 Permanently deletes a session and its corresponding JSON file.
@@ -152,7 +184,12 @@ Core API for LLM communication. Requests are proxied to the configured internal 
 - **URL**: `/api/chat/completions`
 - **Method**: `POST`
 - **Request Body**: Compatible with OpenAI format.
-- **Response (Streamed)**: Returns `text/event-stream`. Ends with a `[TELEMETRY]` block.
+- **Overrides**: You can optionally include the following in the request body to override global backend settings:
+  - `base_url`, `api_key`, `model_name`, `system_prompt`, `extra_params` (entire object)
+  - Individual parameters: `temperature`, `top_p`, `max_tokens`, `presence_penalty`, `frequency_penalty`.
+- **Response (Streamed)**: Returns `text/event-stream`.
+  - Incremental content follows standard OpenAI streaming format.
+  - Ends with a `data: [TELEMETRY] { "ttft": ..., "total_time": ..., "total_chars": ..., "total_tokens": ... }` line before disconnection.
 
 ---
 

@@ -1,20 +1,21 @@
 <template>
   <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
     <div class="sidebar-header">
-      <button class="btn-new-chat" @click="$emit('new-chat')">+ 新建对话</button>
+      <button class="btn-new-chat" @click="$emit('new-chat')">+ {{ t('newChat') }}</button>
     </div>
     <div class="session-list">
+      <h3>{{ t('history') }}</h3>
       <div
         v-for="s in sessions"
         :key="s.id"
         class="session-item"
         :class="{ active: currentSessionId === s.id }"
         @click="$emit('select-session', s.id)"
-        :title="`创建时间: ${formatTipTime(s.create_time)}\n更新时间: ${formatTipTime(s.update_time)}`"
+        :title="`${t('history')}: ${formatTipTime(s.create_time)}`"
       >
-        <span class="session-title">{{ s.title || '新对话' }}</span>
+        <span class="session-title">{{ s.title === '___NEW_CHAT___' ? t('newChat') : (s.title || t('newChat')) }}</span>
         <div class="session-actions">
-          <span v-if="generatingSessions.includes(s.id)" class="generating-icon" title="后台正在生成...">
+          <span v-if="generatingSessions.includes(s.id)" class="generating-icon">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           </span>
           <button class="btn-delete-session" @click.stop="$emit('delete-session', s.id)">✕</button>
@@ -22,12 +23,14 @@
       </div>
     </div>
     <div class="sidebar-footer">
-      <button class="btn-clear-all" @click="$emit('clear-all')">清空所有对话</button>
+      <button class="btn-clear-all" @click="$emit('clear-all')">{{ t('clearAll') }}</button>
     </div>
   </aside>
 </template>
 
 <script setup>
+import { t } from '../utils/i18n';
+
 defineProps({
   sessions: { type: Array, required: true },
   currentSessionId: { type: String, default: null },

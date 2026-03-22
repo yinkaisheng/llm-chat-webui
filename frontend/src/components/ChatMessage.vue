@@ -3,19 +3,19 @@
     <div class="message-bubble animate-fade-in" :class="message.role">
       <div class="message-role">
         <span class="role-left">
-          {{ message.role === 'user' ? '你' : '助手' }}
+          {{ message.role === 'user' ? (locale === 'zh' ? '你' : 'You') : (locale === 'zh' ? '助手' : 'Assistant') }}
           <span class="message-time" v-if="message.time">{{ message.time }}</span>
         </span>
         <div class="role-right">
-          <button class="btn-icon-sm" v-if="message.role === 'user'" @click="$emit('edit', message.content)" title="编辑消息">✏️</button>
-          <button class="btn-icon-sm btn-copy-msg" @click="copyText(message.content)" title="复制内容">📋</button>
+          <button class="btn-icon-sm" v-if="message.role === 'user'" @click="$emit('edit', message.content)" :title="t('edit')">✏️</button>
+          <button class="btn-icon-sm btn-copy-msg" @click="copyText(message.content)" :title="t('copy')">📋</button>
         </div>
       </div>
       <details class="reasoning-details" v-if="message.reasoning_content" :open="!message.isCollapsed" @toggle="toggleCollapse">
         <summary class="reasoning-summary">
           <span class="collapse-icon">▶</span>
-          <span>🤔 思考过程</span>
-          <button class="btn-icon-sm btn-copy-reasoning" @click.stop.prevent="copyText(message.reasoning_content)" title="复制思考过程">📋</button>
+          <span>🤔 {{ t('reasoning') }}</span>
+          <button class="btn-icon-sm btn-copy-reasoning" @click.stop.prevent="copyText(message.reasoning_content)" :title="t('copy')">📋</button>
         </summary>
         <div class="message-content markdown-body reasoning-content" v-html="renderMarkdown(message.reasoning_content)" @click="handleCodeCopy"></div>
       </details>
@@ -27,12 +27,12 @@
       </div>
       <div v-else class="message-content markdown-body" v-html="renderMarkdown(message.content)" @click="handleCodeCopy"></div>
       <div class="message-meta" v-if="message.meta">
-        <span v-if="message.meta.ttft !== undefined && message.meta.ttft !== null">TTFT: {{ message.meta.ttft.toFixed(3) }}s</span>
-        <span v-if="message.meta.total_time !== undefined && message.meta.total_time !== null">Total Time: {{ message.meta.total_time.toFixed(1) }}s</span>
-        <span v-if="message.meta.total_chars !== undefined && message.meta.total_chars !== null">Total Chars: {{ message.meta.total_chars }}</span>
-        <span v-if="message.meta.speed_chars !== undefined && message.meta.speed_chars !== null">Speed/Char: {{ message.meta.speed_chars.toFixed(1) }}/s</span>
-        <span v-if="message.meta.total_tokens !== undefined && message.meta.total_tokens !== null">Total Tokens: {{ message.meta.total_tokens }}</span>
-        <span v-if="message.meta.speed_tokens !== undefined && message.meta.speed_tokens !== null">Speed/Token: {{ message.meta.speed_tokens.toFixed(1) }}/s</span>
+        <span v-if="message.meta.ttft !== undefined && message.meta.ttft !== null">{{ t('firstToken') }}: {{ message.meta.ttft.toFixed(3) }}s</span>
+        <span v-if="message.meta.total_time !== undefined && message.meta.total_time !== null">{{ t('totalTime') }}: {{ message.meta.total_time.toFixed(1) }}s</span>
+        <span v-if="message.meta.total_chars !== undefined && message.meta.total_chars !== null">{{ t('totalChars') }}: {{ message.meta.total_chars }}</span>
+        <span v-if="message.meta.speed_chars !== undefined && message.meta.speed_chars !== null">{{ t('speed') }}: {{ message.meta.speed_chars.toFixed(1) }} {{ t('charsUnit') }}/s</span>
+        <span v-if="message.meta.total_tokens !== undefined && message.meta.total_tokens !== null">{{ t('tokens') }}: {{ message.meta.total_tokens }}</span>
+        <span v-if="message.meta.speed_tokens !== undefined && message.meta.speed_tokens !== null">{{ t('speed') }}: {{ message.meta.speed_tokens.toFixed(1) }} {{ t('tokens') }}/s</span>
       </div>
     </div>
   </div>
@@ -40,6 +40,7 @@
 
 <script setup>
 import { parseMarkdown } from '../utils/markdown';
+import { t, locale } from '../utils/i18n';
 
 const props = defineProps({
   message: {
@@ -79,7 +80,7 @@ const handleCodeCopy = async (event) => {
       try {
         await navigator.clipboard.writeText(decodeURIComponent(rawCode));
         const originalText = target.innerText;
-        target.innerText = '已复制!';
+        target.innerText = t('copied');
         setTimeout(() => { target.innerText = originalText; }, 2000);
       } catch (err) {
         console.error('Failed to copy code snippet', err);
@@ -196,8 +197,8 @@ const handleCodeCopy = async (event) => {
   display: flex;
   flex-direction: column;
 }
-.message-content :deep(p), 
-.message-content :deep(li), 
+.message-content :deep(p),
+.message-content :deep(li),
 .message-content :deep(a),
 .message-content :deep(table) {
   font-size: var(--chat-font-size, 15px);
@@ -248,8 +249,8 @@ details[open] .collapse-icon {
   font-size: calc(var(--chat-font-size, 15px) - 2px);
   opacity: 0.8;
 }
-.message-content.reasoning-content :deep(p), 
-.message-content.reasoning-content :deep(li), 
+.message-content.reasoning-content :deep(p),
+.message-content.reasoning-content :deep(li),
 .message-content.reasoning-content :deep(a),
 .message-content.reasoning-content :deep(table) {
   font-size: calc(var(--chat-font-size, 15px) - 2px);
@@ -257,7 +258,8 @@ details[open] .collapse-icon {
 
 @media (max-width: 768px) {
   .message-bubble {
-    max-width: 95%;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
   }
 }
 </style>

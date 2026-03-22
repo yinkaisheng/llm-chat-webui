@@ -1,20 +1,20 @@
 <template>
   <div class="settings-drawer" :class="{'drawer-open': show}">
     <div class="drawer-header">
-      <h3>页面配置</h3>
+      <h3>{{ t('uiSettingsTitle') }}</h3>
       <button class="btn-close-drawer" @click="$emit('update:show', false)">✕</button>
     </div>
     <div class="drawer-content">
       <div class="form-row">
         <div class="form-group flex-1">
-          <label>正文字体大小 (px)</label>
+          <label>{{ t('fontSize') }} (px)</label>
           <input type="number" min="16" max="22" step="1" v-model.number="localFontSize" @input="updatePreview" />
         </div>
       </div>
       <div class="drawer-actions">
-        <span class="success-msg" v-if="configSuccess">已保存！</span>
-        <button class="btn-cancel" @click="handleReset">恢复默认</button>
-        <button class="btn-save" @click="handleSave">保存配置</button>
+        <span class="success-msg" v-if="configSuccess">OK!</span>
+        <button class="btn-cancel" @click="handleReset">{{ t('reset') }}</button>
+        <button class="btn-save" @click="handleSave">{{ t('save') }}</button>
       </div>
     </div>
   </div>
@@ -22,6 +22,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { t } from '../utils/i18n';
 
 const props = defineProps({
   show: Boolean,

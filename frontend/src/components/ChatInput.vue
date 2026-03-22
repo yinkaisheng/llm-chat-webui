@@ -8,7 +8,7 @@
         </div>
       </div>
 
-      <button class="btn-icon btn-attach" @click="triggerFileInput" title="附加图片">
+      <button class="btn-icon btn-attach" @click="triggerFileInput" :title="t('attachImage')">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
           <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -19,7 +19,7 @@
 
       <textarea
         v-model="internalValue"
-        placeholder="在此输入您的消息... (支持粘贴图片, Shift+Enter 换行)"
+        :placeholder="t('inputPlaceholder')"
         @keydown.enter.exact.prevent="emitSend"
         @paste="handlePaste"
         ref="inputRef"
@@ -29,16 +29,16 @@
       ></textarea>
 
       <button class="btn-send" @click="emitSend" :disabled="isGenerating && !canStopAndComplete">
-        {{ isGenerating ? '⏹ 停止' : (isEditing ? '➤ 更新' : '➤ 发送') }}
+        {{ isGenerating ? '⏹ ' + t('stop') : (isEditing ? '➤ ' + t('update') : '➤ ' + t('send')) }}
       </button>
     </div>
     <div class="input-meta">
       <template v-if="isEditing">
-        <span class="edit-info">✏️ 正在编辑消息（此节点之后的历史对话将被裁切并重新生成）</span>
-        <button class="btn-regenerate" style="color: #ef4444;" @click="$emit('cancel-edit')">✕ 取消 (Esc)</button>
+        <span class="edit-info">✏️ {{ t('edit') }}</span>
+        <button class="btn-regenerate" style="color: #ef4444;" @click="$emit('cancel-edit')">✕ {{ t('close') }} (Esc)</button>
       </template>
       <template v-else-if="canRegenerate">
-        <button class="btn-regenerate" @click="$emit('regenerate')">↻ 重新生成</button>
+        <button class="btn-regenerate" @click="$emit('regenerate')">↻ {{ t('regenerate') }}</button>
       </template>
     </div>
   </div>
@@ -46,6 +46,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue';
+import { t } from '../utils/i18n';
 
 const props = defineProps({
   modelValue: String,
@@ -144,7 +145,7 @@ const setAttachments = (newAttachments) => {
 };
 
 const emitSend = () => {
-  if (!internalValue.value.trim() && attachments.value.length === 0) return;
+  if (!props.isGenerating && !internalValue.value.trim() && attachments.value.length === 0) return;
   emit('send', attachments.value);
 };
 
@@ -192,13 +193,13 @@ defineExpose({ focus, autoResize, clearAttachments, setAttachments });
   font-family: inherit;
   font-size: var(--chat-font-size, 15px);
   resize: none;
-  padding-right: 120px;
-  padding-left: 14px;
+  padding-right: 160px;
+  padding-left: 45px;
   overflow-y: auto;
 }
 .btn-attach {
   position: absolute;
-  right: 84px;
+  left: 12px;
   bottom: 8px;
   background: none;
   border: none;
@@ -306,5 +307,10 @@ defineExpose({ focus, autoResize, clearAttachments, setAttachments });
   margin-right: 12px;
   color: var(--primary-color);
   font-size: 13px;
+}
+@media (max-width: 768px) {
+  .input-wrapper, .input-meta {
+    max-width: 100% !important;
+  }
 }
 </style>

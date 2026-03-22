@@ -1,5 +1,10 @@
 <template>
   <div class="app-container" :style="{ '--chat-font-size': pageFontSize + 'px' }">
+    <div 
+      v-if="sidebarOpen" 
+      class="sidebar-overlay" 
+      @click="sidebarOpen = false"
+    ></div>
     <Sidebar
       :sessions="sessions"
       :currentSessionId="currentSessionId"
@@ -11,38 +16,45 @@
       @clear-all="clearAll"
     />
 
-    <main class="main-content" :class="{ 'full-width-mode': isFullWidth }" ref="mainContentRef">
+    <main class="main-content" :class="{ 'full-width-mode': isFullWidth }" ref="mainContentRef" @scroll="handleScroll">
       <header class="top-nav">
         <div class="nav-left">
           <button class="mobile-menu-btn" @click="sidebarOpen = !sidebarOpen">☰</button>
-          <h2>{{ currentTitle }}</h2>
+          <h2>{{ currentTitle === '___NEW_CHAT___' ? t('newChat') : currentTitle }}</h2>
         </div>
         <div class="nav-right">
-          <!-- Stream Toggle -->
-          <label class="toggle-switch" title="切换流式输出">
-            <span class="switch-label">流式</span>
-            <div class="switch-box">
-              <input type="checkbox" v-model="useStream" />
-              <span class="slider"></span>
-            </div>
-          </label>
           <!-- Full Width Toggle -->
-          <label class="toggle-switch" title="切换全宽模式">
-            <span class="switch-label">全宽</span>
+          <label class="toggle-switch toggle-fullwidth" :title="t('fullWidth')">
+            <span class="switch-label">{{ t('fullWidth') }}</span>
             <div class="switch-box">
               <input type="checkbox" v-model="isFullWidth" @change="saveWidth" />
               <span class="slider"></span>
             </div>
           </label>
-          <button class="btn-icon" @click="toggleTheme" title="切换主题">{{ theme === 'dark' ? '☀️' : '🌙' }}</button>
-          <button class="btn-icon" @click="togglePageSettingsDrawer" title="页面配置">🛠 页面配置</button>
-          <button class="btn-icon" @click="toggleSettingsDrawer" title="模型配置">⚙️ LLM 配置</button>
+          <button class="btn-icon" @click="toggleTheme" :title="theme === 'dark' ? '☀️' : '🌙'">{{ theme === 'dark' ? '☀️' : '🌙' }}</button>
+          <button class="btn-icon" @click="togglePageSettingsDrawer" :title="t('pageSettings')">🛠</button>
+          <button class="btn-icon" @click="toggleSettingsDrawer" :title="t('llmConfig')">⚙️ {{ t('llmConfig') }}</button>
+
+          <!-- Language Switcher -->
+          <div class="lang-switcher">
+            <button 
+              class="btn-lang" 
+              :class="{ active: locale === 'zh' }" 
+              @click="setLocale('zh')"
+            >简</button>
+            <button 
+              class="btn-lang" 
+              :class="{ active: locale === 'en' }" 
+              @click="setLocale('en')"
+            >EN</button>
+          </div>
         </div>
 
         <SettingsDrawer
           v-model:show="showSettingsDrawer"
+          v-model:useStream="useStream"
           :configForm="configForm"
-          @save="saveConfigToLocal"
+          @save="updateConfig"
           @reset="resetConfigToDefault"
         />
 
@@ -58,7 +70,7 @@
       <div class="chat-area">
         <div v-if="messages.length === 0" class="empty-state">
           <h1>{{ configForm.model_name || 'LLM Chat' }}</h1>
-          <p>今天我能帮您什么？</p>
+          <p>{{ t('howCanIHelp') }}</p>
         </div>
 
         <ChatMessage
@@ -102,8 +114,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { fetchConfig, listSessions, getSession, saveSession, deleteSession, clearAllSessions } from './utils/api';
+import { t, locale, setLocale } from './utils/i18n';
 import lightThemeCss from 'highlight.js/styles/github.min.css?raw';
 import darkThemeCss from 'highlight.js/styles/github-dark.min.css?raw';
 
@@ -138,13 +151,13 @@ const configForm = ref({
 
 const sessions = ref([]);
 const currentSessionId = ref(null);
-const currentTitle = ref('新对话');
+const currentTitle = ref('___NEW_CHAT___');
 const messages = ref([]);
 const inputForm = ref('');
 const chatInputRef = ref(null);
 const mainContentRef = ref(null);
-
-const useStream = ref(true);
+const autoScrollEnabled = ref(true);
+const useStream = ref(localStorage.getItem('useStream') !== 'false');
 const activeStreams = ref({});
 const isFullWidth = ref(localStorage.getItem('isFullWidth') === 'true');
 
@@ -185,6 +198,18 @@ const toggleTheme = () => {
 const saveWidth = () => {
   localStorage.setItem('isFullWidth', isFullWidth.value.toString());
 };
+
+watch(useStream, (newVal) => {
+  localStorage.setItem('useStream', newVal.toString());
+});
+
+watch(currentSessionId, (newId) => {
+  if (newId) {
+    localStorage.setItem('lastSessionId', newId);
+  } else {
+    localStorage.removeItem('lastSessionId');
+  }
+});
 
 const toggleSettingsDrawer = () => {
   showSettingsDrawer.value = !showSettingsDrawer.value;
@@ -254,10 +279,20 @@ const saveConfigToLocal = (newConfig) => {
   localStorage.setItem('llm_chat_config', JSON.stringify(configForm.value));
 };
 
-const scrollToBottom = () => {
+const handleScroll = (e) => {
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
+  // If we are at the bottom (with 50px threshold), enable auto-scroll
+  const atBottom = scrollTop + clientHeight >= scrollHeight - 50;
+  autoScrollEnabled.value = atBottom;
+};
+
+const scrollToBottom = (force = false) => {
+  if (!force && !autoScrollEnabled.value) return;
   nextTick(() => {
     if (mainContentRef.value) {
       mainContentRef.value.scrollTop = mainContentRef.value.scrollHeight;
+      // When scrolling to bottom, we naturally re-enable following
+      autoScrollEnabled.value = true;
     }
   });
 };
@@ -272,19 +307,21 @@ const fetchSessions = async () => {
 
 const startNewChat = () => {
   currentSessionId.value = null;
-  currentTitle.value = '新对话';
+  currentTitle.value = '___NEW_CHAT___';
   messages.value = [];
   editingIndex.value = null;
   inputForm.value = '';
   chatInputRef.value?.clearAttachments();
   nextTick(() => chatInputRef.value?.focus());
+  // Mobile: Close sidebar after selection
+  if (window.innerWidth <= 768) sidebarOpen.value = false;
 };
 
 const loadSession = async (id) => {
   try {
     const data = await getSession(id);
     currentSessionId.value = id;
-    currentTitle.value = data.title || '新对话';
+    currentTitle.value = data.title || '___NEW_CHAT___';
     messages.value = (data.messages || []).map(m => ({
       ...m,
       // 历史记录默认折叠思考过程
@@ -292,14 +329,16 @@ const loadSession = async (id) => {
     }));
     editingIndex.value = null;
     inputForm.value = '';
-    scrollToBottom();
+    scrollToBottom(true);
+    // Mobile: Close sidebar after selection
+    if (window.innerWidth <= 768) sidebarOpen.value = false;
   } catch (e) {
     console.error(e);
   }
 };
 
 const deleteChatSession = async (id) => {
-  if (confirm('确定要删除此对话吗？')) {
+  if (confirm(t('confirmDelete'))) {
     await deleteSession(id);
     if (currentSessionId.value === id) startNewChat();
     await fetchSessions();
@@ -307,7 +346,7 @@ const deleteChatSession = async (id) => {
 };
 
 const clearAll = async () => {
-  if (confirm('确定要清空所有对话记录吗？此操作无法撤销。')) {
+  if (confirm(t('confirmClearAll'))) {
     await clearAllSessions();
     startNewChat();
     await fetchSessions();
@@ -470,7 +509,7 @@ const sendMessage = async (attachments = []) => {
   }
 
   if (!configForm.value.base_url) {
-    alert("请先在右侧【配置】中填写您的 API Base URL 和模型名等参数。");
+    alert(t('configTip'));
     showSettingsDrawer.value = true;
     return;
   }
@@ -498,11 +537,16 @@ const sendMessage = async (attachments = []) => {
   
   chatInputRef.value?.clearAttachments();
   nextTick(() => chatInputRef.value?.autoResize());
-  scrollToBottom();
+  scrollToBottom(true);
   await saveCurrentSession();
 
   if (messages.value.length === 1) {
-    autoRenameSession(text || '图片分析', sessionId);
+    if (currentTitle.value === '___NEW_CHAT___') {
+      const initialTitle = text ? (text.slice(0, 30) + (text.length > 30 ? '...' : '')) : (locale.value === 'zh' ? '图片分析' : 'Image Analysis');
+      currentTitle.value = initialTitle;
+      await saveCurrentSession(); 
+    }
+    autoRenameSession(text || (locale.value === 'zh' ? '图片分析' : 'Image Analysis'), sessionId);
   }
 
   doSend();
@@ -702,12 +746,18 @@ const doSend = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   document.documentElement.setAttribute('data-theme', theme.value);
   applyHljsTheme(theme.value);
   loadSettings();
-  fetchSessions();
-  nextTick(() => chatInputRef.value?.focus());
+  await fetchSessions();
+  
+  const savedSessionId = localStorage.getItem('lastSessionId');
+  if (savedSessionId) {
+    loadSession(savedSessionId);
+  } else {
+    nextTick(() => chatInputRef.value?.focus());
+  }
 });
 </script>
 
@@ -754,6 +804,33 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* Language Switcher */
+.lang-switcher {
+  display: flex;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  height: 28px;
+}
+.btn-lang {
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-lang.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-lang:hover:not(.active) {
+  background-color: var(--border-color);
 }
 
 /* Toggle Switch Styles */
@@ -837,6 +914,20 @@ onMounted(() => {
 @media (max-width: 768px) {
   .mobile-menu-btn {
     display: block;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 40;
+  }
+  .toggle-fullwidth {
+    display: none;
   }
 }
 </style>

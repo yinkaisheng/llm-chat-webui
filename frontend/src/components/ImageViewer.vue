@@ -2,10 +2,10 @@
   <div v-if="show" class="image-viewer-overlay" @click.self="close">
     <div class="viewer-toolbar">
       <span class="zoom-info">{{ Math.round(scale * 100) }}%</span>
-      <button class="btn-tool" @click="zoomIn">🔍+</button>
-      <button class="btn-tool" @click="zoomOut">🔍-</button>
-      <button class="btn-tool" @click="reset1to1">1:1</button>
-      <button class="btn-tool" @click="fitScreen">自适应</button>
+      <button class="btn-tool" @click="zoomIn" :title="t('zoomIn')">🔍+</button>
+      <button class="btn-tool" @click="zoomOut" :title="t('zoomOut')">🔍-</button>
+      <button class="btn-tool" @click="reset1to1">{{ t('actualSize') }}</button>
+      <button class="btn-tool" @click="fitScreen">{{ t('fitScreen') }}</button>
       <button class="btn-close" @click="close">✕</button>
     </div>
     
@@ -25,6 +25,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { t } from '../utils/i18n';
 
 const props = defineProps({
   show: Boolean,
