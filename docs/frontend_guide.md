@@ -13,7 +13,7 @@ Since the frontend (Vue + Vite) and backend (FastAPI) are separate systems:
 
 To ensure frontend requests reach the backend, a **Proxy** must be configured in `vite.config.js`.
 
-> **Note**: The development environment proxy is already configured to forward `/api/...` requests to `http://127.0.0.1:9949`.
+> **Note**: The API proxy has been configured in `vite.config.js` to forward development environment requests from `/api/...` to `http://127.0.0.1:9949`.
 
 ---
 
@@ -46,8 +46,9 @@ When changes are complete and ready for deployment, the source code needs to be 
    ```bash
    npm run build
    ```
+   A `dist` folder will be generated, containing the compiled static assets.
 3. **Verify Deployment**:
-   This project uses a directory link (Junction) named `static` pointing to `frontend/dist/`. Changes take effect immediately after the build.
+   Copy all files from the `dist` folder to the `static` folder in the root directory.
 
    Access the backend URL to see the result:
    ```text
