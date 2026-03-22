@@ -1,3 +1,0 @@
-
-GitCommit = ""
-GitDate = ""

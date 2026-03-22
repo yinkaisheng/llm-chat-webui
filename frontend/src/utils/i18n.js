@@ -21,19 +21,19 @@ const translations = {
     history: '历史会话',
     clearAll: '清空所有',
 
-    // SettingsDrawer
-    settingsTitle: '模型配置 (LLM Configuration)',
-    baseUrl: 'API 基础路径 (Base URL)',
-    apiKey: 'API 密钥 (API Key)',
-    modelName: '模型名称 (Model Name)',
-    systemPrompt: '系统提示词 (System Prompt)',
-    extraParams: '额外请求参数 (Extra JSON)',
+    // LlmSettingsDrawer
+    llmSettingsTitle: '模型配置',
+    baseUrl: 'API 基础路径',
+    apiKey: 'API 密钥',
+    modelName: '模型名称',
+    systemPrompt: '系统提示词',
+    extraParams: '额外请求参数',
     save: '保存',
     reset: '重置',
 
     // PageSettingsDrawer
-    uiSettingsTitle: '页面设置 (UI Settings)',
-    fontSize: '渲染字体大小 (Chat Font Size)',
+    uiSettingsTitle: '页面设置',
+    fontSize: '渲染字体大小',
     close: '关闭',
 
     // ChatInput
@@ -80,8 +80,8 @@ const translations = {
     history: 'History',
     clearAll: 'Clear All',
 
-    // SettingsDrawer
-    settingsTitle: 'LLM Configuration',
+    // LlmSettingsDrawer
+    llmSettingsTitle: 'LLM Configuration',
     baseUrl: 'API Base URL',
     apiKey: 'API Key',
     modelName: 'Model Name',

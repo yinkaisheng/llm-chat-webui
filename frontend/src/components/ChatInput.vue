@@ -8,15 +8,6 @@
         </div>
       </div>
 
-      <button class="btn-icon btn-attach" @click="triggerFileInput" :title="t('attachImage')">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-          <circle cx="8.5" cy="8.5" r="1.5"></circle>
-          <polyline points="21 15 16 10 5 21"></polyline>
-        </svg>
-      </button>
-      <input type="file" ref="fileInputRef" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/svg+xml" multiple class="hidden-file-input" @change="handleFileSelect" />
-
       <textarea
         v-model="internalValue"
         :placeholder="t('inputPlaceholder')"
@@ -28,9 +19,20 @@
         @keydown.esc="$emit('cancel-edit')"
       ></textarea>
 
-      <button class="btn-send" @click="emitSend" :disabled="isGenerating && !canStopAndComplete">
-        {{ isGenerating ? '⏹ ' + t('stop') : (isEditing ? '➤ ' + t('update') : '➤ ' + t('send')) }}
-      </button>
+      <div class="input-actions">
+        <button class="btn-icon btn-attach" @click="triggerFileInput" :title="t('attachImage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+        </button>
+        <input type="file" ref="fileInputRef" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/svg+xml" multiple class="hidden-file-input" @change="handleFileSelect" />
+
+        <button class="btn-send" @click="emitSend" :disabled="isGenerating && !canStopAndComplete">
+          {{ isGenerating ? '⏹ ' + t('stop') : (isEditing ? '➤ ' + t('update') : '➤ ' + t('send')) }}
+        </button>
+      </div>
     </div>
     <div class="input-meta">
       <template v-if="isEditing">
@@ -193,14 +195,19 @@ defineExpose({ focus, autoResize, clearAttachments, setAttachments });
   font-family: inherit;
   font-size: var(--chat-font-size, 15px);
   resize: none;
-  padding-right: 160px;
-  padding-left: 45px;
+  padding: 4px 0;
   overflow-y: auto;
+  line-height: 1.5;
+}
+.input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
 }
 .btn-attach {
-  position: absolute;
-  left: 12px;
-  bottom: 8px;
   background: none;
   border: none;
   cursor: pointer;
@@ -211,7 +218,6 @@ defineExpose({ focus, autoResize, clearAttachments, setAttachments });
   transition: all 0.2s;
   padding: 6px;
   border-radius: 6px;
-  z-index: 2;
 }
 .btn-attach:hover {
   background-color: var(--bg-color);
@@ -266,16 +272,12 @@ defineExpose({ focus, autoResize, clearAttachments, setAttachments });
 }
 
 .btn-send {
-  position: absolute;
-  right: 12px;
-  bottom: 8px;
   background-color: var(--primary-color);
   color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 6px 16px;
+  border-radius: 8px;
   font-weight: 600;
   transition: background-color 0.2s;
-  z-index: 2;
 }
 .btn-send:disabled {
   background-color: var(--text-secondary);

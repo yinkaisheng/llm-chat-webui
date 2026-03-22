@@ -117,7 +117,7 @@ const handleReset = () => {
   color: var(--text-primary);
 }
 .form-group input[type="number"] {
-  width: 100%;
+  width: 80px;
   padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
