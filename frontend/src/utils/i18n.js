@@ -20,6 +20,8 @@ const translations = {
     // Sidebar
     history: '历史会话',
     clearAll: '清空所有',
+    createdAt: '创建时间',
+    updatedAt: '更新时间',
 
     // LlmSettingsDrawer
     llmSettingsTitle: '模型配置',
@@ -79,6 +81,8 @@ const translations = {
     // Sidebar
     history: 'History',
     clearAll: 'Clear All',
+    createdAt: 'Created At',
+    updatedAt: 'Updated At',
 
     // LlmSettingsDrawer
     llmSettingsTitle: 'LLM Configuration',

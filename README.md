@@ -61,7 +61,7 @@ llm-chat/
 ### 1. Start Backend
 1. Install dependencies:
    ```bash
-   pip install fastapi uvicorn pydantic pyyaml httpx
+   pip install -r requirements.txt
    ```
 2. Start the service:
    ```bash
@@ -83,6 +83,12 @@ llm-chat/
    npm run build
    ```
    Then copy the generated `dist/` files to the backend `static/` directory for deployment.
+
+---
+
+## 🛡️ Security Considerations
+* **HTTP Proxy API**: The `/api/request` endpoint is a powerful tool for proxying requests. By default, it blocks access to local/private IP addresses (`HTTP_REQUEST_BLOCK_LOCAL_IP = True` is recommended for public deployment).
+* **CORS Policy**: The current configuration allows all origins (`*`). For production, please restrict this to your specific domain.
 
 ---
 

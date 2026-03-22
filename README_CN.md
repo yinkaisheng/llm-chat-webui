@@ -61,7 +61,7 @@ llm-chat/
 ### 1. 启动后端 (Backend)
 1. 安装依赖：
    ```bash
-   pip install fastapi uvicorn pydantic pyyaml httpx
+   pip install -r requirements.txt
    ```
 2. 启动服务：
    ```bash
@@ -83,6 +83,12 @@ llm-chat/
    npm run build
    ```
    随后将生成的 `dist/` 文件拷贝至后端 `static/` 目录下即可完成托管部署。
+
+---
+
+## 🛡️ 安全注意事项 (Security)
+* **HTTP 代理接口**：`/api/request` 是一个强大的代理工具。默认情况下，它会根据配置拦截对本地/私有 IP 的访问（建议在公网部署时将 `HTTP_REQUEST_BLOCK_LOCAL_IP` 设为 `True`）。
+* **跨域策略 (CORS)**：当前配置允许所有来源 (`*`)。在生产环境中，请务必将其限制为特定的域名。
 
 ---
 

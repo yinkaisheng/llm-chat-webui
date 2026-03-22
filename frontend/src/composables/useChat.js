@@ -58,7 +58,7 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
   const buildApiPayload = (messagesArray, isStream) => {
     let parsedExtraParams = {};
     if (configForm.value.extra_params && configForm.value.extra_params.trim() !== '') {
-      try { parsedExtraParams = JSON.parse(configForm.value.extra_params); } catch(e){}
+      try { parsedExtraParams = JSON.parse(configForm.value.extra_params); } catch(e){ console.error("Failed to parse extra_params", e); }
     }
     return {
       base_url: configForm.value.base_url,
@@ -336,6 +336,7 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
                   lastMetaUpdateTime = now;
                 }
               } catch (e) {
+                console.error("Failed to parse streaming chunk", e, dataStr);
               }
             }
           }

@@ -138,12 +138,15 @@ async def make_http_request(request: Request, req_data: models.HttpRequestModel 
                     is_local = True
 
             if is_local:
-                logger.warning(f'Blocked request to local/private address: {url} from {client_ip}')
+                logger.warning(f'SECURITY ALERT: Blocked request to local/private address: {url} from {client_ip}')
                 return {
                     'code': 4,
                     'message': 'Access to local/private addresses or localhost is blocked for security reasons',
                     'data': None
                 }
+
+            # Log a warning for proxy usage (even if not local)
+            logger.info(f'Generic HTTP proxying request: {method} {url} from {client_ip}')
 
         # Validate protocol (only allow HTTP and HTTPS)
         if parsed_url.scheme not in ['http', 'https']:
@@ -311,7 +314,8 @@ async def list_sessions():
                             'create_time': create_time,
                             'update_time': os.path.getmtime(os.path.join(SESSIONS_DIR, file))
                         })
-                except:
+                except Exception as e:
+                    logger.debug(f'Failed to parse session file {file}: {e}')
                     pass
         return {'code': 0, 'message': 'success', 'data': sessions}
     except Exception as e:
@@ -446,7 +450,9 @@ async def chat_completions(req: dict = Body(...), request: Request = None):
                         async with client.stream("POST", url, headers=headers, json=payload, timeout=300.0) as resp:
                             if resp.status_code != 200:
                                 error_text = await resp.aread()
-                                yield f"data: {json.dumps({'error': error_text.decode('utf-8')})}\n\n"
+                                error_msg = error_text.decode('utf-8', errors='ignore')
+                                logger.error(f"Upstream API error ({resp.status_code}): {error_msg}")
+                                yield f"data: {json.dumps({'error': f'Upstream API error {resp.status_code}: {error_msg}'})}\n\n"
                                 return
 
                             async for chunk in resp.aiter_lines():

@@ -86,9 +86,33 @@
         @cancel-edit="cancelEdit(chatInputRef)"
         @regenerate="regenerateLast(useStream, scrollToBottom)"
       />
+
     </main>
+    
+    <!-- Scroll navigation buttons -->
+    <Transition name="fade">
+      <div v-if="hasScrollableContent" class="scroll-nav-buttons">
+        <button 
+          v-if="!isAtTop" 
+          class="btn-scroll-nav btn-scroll-top" 
+          @click="scrollToTop"
+          title="Scroll to top"
+        >
+          ↑
+        </button>
+        <button 
+          v-if="!autoScrollEnabled" 
+          class="btn-scroll-nav btn-scroll-bottom" 
+          @click="scrollToBottom(true)"
+          title="Scroll to bottom"
+        >
+          ↓
+        </button>
+      </div>
+    </Transition>
+
     <ImageViewer v-model:show="showImageViewer" :src="previewImageUrl" />
-  </div>
+</div>
 </template>
 
 <script setup>
@@ -120,6 +144,8 @@ const showPageSettingsDrawer = ref(false);
 const showImageViewer = ref(false);
 const previewImageUrl = ref('');
 const useStream = ref(localStorage.getItem('useStream') !== 'false');
+const isAtTop = ref(true);
+const hasScrollableContent = ref(false);
 
 // Refs for UI
 const chatInputRef = ref(null);
@@ -172,14 +198,31 @@ const handleScroll = (e) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
   const atBottom = scrollTop + clientHeight >= scrollHeight - 50;
   autoScrollEnabled.value = atBottom;
+  
+  isAtTop.value = scrollTop < 50;
+  hasScrollableContent.value = scrollHeight > clientHeight + 100;
 };
 
 const scrollToBottom = (force = false) => {
   if (!force && !autoScrollEnabled.value) return;
   nextTick(() => {
     if (mainContentRef.value) {
-      mainContentRef.value.scrollTop = mainContentRef.value.scrollHeight;
+      mainContentRef.value.scrollTo({
+        top: mainContentRef.value.scrollHeight,
+        behavior: 'smooth'
+      });
       autoScrollEnabled.value = true;
+    }
+  });
+};
+
+const scrollToTop = () => {
+  nextTick(() => {
+    if (mainContentRef.value) {
+      mainContentRef.value.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     }
   });
 };
@@ -243,6 +286,7 @@ onMounted(async () => {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  position: relative;
 }
 
 .main-content {
@@ -291,5 +335,42 @@ onMounted(async () => {
     backdrop-filter: blur(2px);
     z-index: 40;
   }
+}
+
+/* Scroll navigation buttons */
+.scroll-nav-buttons {
+  position: absolute;
+  bottom: 120px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 20;
+}
+.btn-scroll-nav {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  opacity: 0.8;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.btn-scroll-nav:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

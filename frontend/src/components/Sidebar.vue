@@ -11,7 +11,7 @@
         class="session-item"
         :class="{ active: currentSessionId === s.id }"
         @click="$emit('select-session', s.id)"
-        :title="`${t('history')}: ${formatTipTime(s.create_time)}`"
+        :title="`${t('createdAt')}：${formatTipTime(s.create_time)}\n${t('updatedAt')}：${formatTipTime(s.update_time)}`"
       >
         <span class="session-title">{{ s.title === '___NEW_CHAT___' ? t('newChat') : (s.title || t('newChat')) }}</span>
         <div class="session-actions">

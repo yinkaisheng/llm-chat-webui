@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+pyyaml
+httpx
+psutil
+loguru
+colorama
+fastapi-offline
+python-multipart
