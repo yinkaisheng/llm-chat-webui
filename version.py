@@ -1,0 +1,3 @@
+
+GitCommit = ""
+GitDate = ""

@@ -1,0 +1,174 @@
+# LLM Chat Backend API Documentation
+
+This document lists the core backend API endpoints for `llm-chat`, including descriptions, request bodies, and response examples.
+
+---
+
+## Table of Contents
+- [Base Service Endpoints](#base-service-endpoints)
+  - [1. Server Health](#1-server-health)
+  - [2. Version Info](#2-version-info)
+  - [3. Server Status](#3-server-status)
+- [LLM Config Management](#llm-config-management)
+  - [4. Get Global Config](#4-get-global-config)
+  - [5. Update Global Config](#5-update-global-config)
+- [Session Management](#session-management)
+  - [6. List All Sessions](#6-list-all-sessions)
+  - [7. Get Session Details](#7-get-session-details)
+  - [8. Save or Update Session](#8-save-or-update-session)
+  - [9. Delete Single Session](#9-delete-single-session)
+  - [10. Clear All Sessions](#10-clear-all-sessions)
+- [Chat Completion API](#chat-completion-api)
+  - [11. Proxy Chat Request (Streaming Supported)](#11-proxy-chat-request-streaming-supported)
+- [Generic HTTP Proxy](#generic-http-proxy)
+  - [12. Generic Backend HTTP Proxy Request](#12-generic-backend-http-proxy-request)
+
+---
+
+## Base Service Endpoints
+
+### 1. Server Health
+Checks if the backend server is alive and reachable.
+- **URL**: `/health`
+- **Method**: `GET`
+- **Response**: `200 OK`
+
+### 2. Version Info
+Retrieves Git date and commit hash of the running backend.
+- **URL**: `/version`
+- **Method**: `GET`
+- **Response Example**:
+```json
+{
+  "git_data": "2024-05-10 12:00:00",
+  "git_hash": "a1b2c3d4e5f6g7h8"
+}
+```
+
+### 3. Server Status
+Retrieves server start time and process information.
+- **URL**: `/status`
+- **Method**: `GET`
+- **Response Example**:
+```json
+{
+  "start_time": "2024-05-15 10:23:45",
+  "pid": 10567
+}
+```
+
+---
+
+## LLM Config Management
+
+### 4. Get Global Config
+Loads the default LLM connection and authentication settings from `config.yaml`.
+- **URL**: `/api/config`
+- **Method**: `GET`
+- **Response Example**:
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "base_url": "http://127.0.0.1:8000/v1",
+    "model_name": "qwen3.5-7b-chat",
+    "api_key": "sk-local-dev-key",
+    "system_prompt": "You are a helpful assistant.",
+    "extra_params": {
+        "temperature": 0.6,
+        "top_k": 20
+    }
+  }
+}
+```
+
+### 5. Update Global Config
+Overwrites the default parameters in `config.yaml`, globally resetting LLM behavior.
+- **URL**: `/api/config`
+- **Method**: `POST`
+- **Request Body Example**:
+```json
+{
+  "base_url": "http://127.0.0.1:8000/v1",
+  "model_name": "qwen3.5-14b-chat",
+  "api_key": "new-secret-key",
+  "system_prompt": "You are a helpful programming assistant.",
+  "extra_params": {}
+}
+```
+
+---
+
+## Session Management
+
+### 6. List All Sessions
+Retrieves all local sessions ordered by modification time (descending).
+- **URL**: `/api/sessions`
+- **Method**: `GET`
+- **Response Example**:
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "id": "sess_1abc",
+      "title": "Vue3 Component Guide",
+      "update_time": 1715423851.0
+    }
+  ]
+}
+```
+
+### 7. Get Session Details
+Retrieves full chat history for a specific `session_id`.
+- **URL**: `/api/sessions/{session_id}`
+- **Method**: `GET`
+
+### 8. Save or Update Session
+Overwrites JSON data for a specific `session_id`.
+- **URL**: `/api/sessions/{session_id}`
+- **Method**: `POST`
+- **Request Body**: Same structure as session data.
+
+### 9. Delete Single Session
+Permanently deletes a session and its corresponding JSON file.
+- **URL**: `/api/sessions/{session_id}`
+- **Method**: `DELETE`
+
+### 10. Clear All Sessions
+Deletes all JSON files in the `sessions/` directory.
+- **URL**: `/api/sessions`
+- **Method**: `DELETE`
+
+---
+
+## Chat Completion API
+
+### 11. Proxy Chat Request (Streaming Supported)
+Core API for LLM communication. Requests are proxied to the configured internal LLM endpoint. Supports SSE (Server-Sent Events) when `stream=true`.
+
+- **URL**: `/api/chat/completions`
+- **Method**: `POST`
+- **Request Body**: Compatible with OpenAI format.
+- **Response (Streamed)**: Returns `text/event-stream`. Ends with a `[TELEMETRY]` block.
+
+---
+
+## Generic HTTP Proxy
+
+### 12. Generic Backend HTTP Proxy Request
+Allows the frontend to bypass CORS by sending requests via the backend.
+- **URL**: `/api/request`
+- **Method**: `POST`
+- **Request Body**:
+```json
+{
+  "method": "POST",
+  "url": "https://external-api.com/v1",
+  "headers": {"Content-Type": "application/json"},
+  "payload": {"param": "value"},
+  "timeout": 30
+}
+```
