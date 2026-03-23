@@ -29,6 +29,7 @@
 2. **启动前端开发服务器**：打开另一个终端，进入 `frontend` 文件夹：
    ```bash
    cd frontend
+   npm install
    npm run dev
    ```
 

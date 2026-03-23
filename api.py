@@ -311,8 +311,9 @@ async def list_sessions():
                         sessions.append({
                             'id': file.replace('.json', ''),
                             'title': data.get('title', 'New Chat'),
+                            'config_name': data.get('config_name'),
                             'create_time': create_time,
-                            'update_time': os.path.getmtime(os.path.join(SESSIONS_DIR, file))
+                            'update_time': os.getmtime(os.path.join(SESSIONS_DIR, file))
                         })
                 except Exception as e:
                     logger.debug(f'Failed to parse session file {file}: {e}')

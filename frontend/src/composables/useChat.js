@@ -79,6 +79,7 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
     const msgsToSave = messages.value.map(({ isCollapsed, ...rest }) => rest);
     await saveSession(currentSessionId.value, {
       title: currentTitle.value,
+      config_name: configForm.value.name,
       messages: msgsToSave
     });
     if (fetchSessions) await fetchSessions();

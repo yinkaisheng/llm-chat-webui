@@ -32,6 +32,14 @@ const translations = {
     extraParams: '额外请求参数',
     save: '保存',
     reset: '重置',
+    new: '新建',
+    rename: '重命名',
+    enterNewConfigName: '输入新配置名称：',
+    enterNewName: '输入新的名称：',
+    confirmDeleteConfig: '您确定要删除此配置吗？',
+    nameExists: '配置名称已存在！',
+    configRequired: 'API 路径和模型名称为必填项。',
+    jsonError: '额外请求参数必须是有效的 JSON 字符串。',
 
     // PageSettingsDrawer
     uiSettingsTitle: '页面设置',
@@ -93,6 +101,14 @@ const translations = {
     extraParams: 'Extra Params (JSON)',
     save: 'Save',
     reset: 'Reset',
+    new: 'New',
+    rename: 'Rename',
+    enterNewConfigName: 'Enter new configuration name:',
+    enterNewName: 'Enter new name:',
+    confirmDeleteConfig: 'Are you sure you want to delete this configuration?',
+    nameExists: 'Configuration name already exists!',
+    configRequired: 'Base URL and Model Name are required.',
+    jsonError: 'Extra Params must be a valid JSON string.',
 
     // PageSettingsDrawer
     uiSettingsTitle: 'UI Settings',

@@ -29,6 +29,7 @@ Use this mode if you need to modify and preview UI changes (colors, buttons, lay
 2. **Start Frontend Dev Server**: Open a new terminal and enter the `frontend` directory:
    ```bash
    cd frontend
+   npm install
    npm run dev
    ```
 

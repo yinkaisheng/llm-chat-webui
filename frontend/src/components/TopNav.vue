@@ -15,7 +15,7 @@
       </label>
       <button class="btn-icon" @click="$emit('toggle-theme')" :title="theme === 'dark' ? '☀️' : '🌙'">{{ theme === 'dark' ? '☀️' : '🌙' }}</button>
       <button class="btn-icon" @click="$emit('toggle-page-settings')" :title="t('pageSettings')">🛠 <span class="btn-text">{{ t('pageSettings') }}</span></button>
-      <button class="btn-icon" @click="$emit('toggle-settings')" :title="t('llmConfig')">⚙️ <span class="btn-text">{{ t('llmConfig') }}</span></button>
+      <button class="btn-icon" @click="$emit('toggle-llm-settings')" :title="t('llmConfig')">⚙️ <span class="btn-text">{{ t('llmConfig') }}</span></button>
 
       <!-- Language Switcher -->
       <div class="lang-switcher">
@@ -44,7 +44,7 @@ defineProps({
   sidebarOpen: Boolean
 });
 
-defineEmits(['update:sidebarOpen', 'update:isFullWidth', 'toggle-theme', 'toggle-page-settings', 'toggle-settings']);
+defineEmits(['update:sidebarOpen', 'update:isFullWidth', 'toggle-theme', 'toggle-page-settings', 'toggle-llm-settings']);
 </script>
 
 <style scoped>

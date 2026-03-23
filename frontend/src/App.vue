@@ -1,8 +1,8 @@
 <template>
   <div class="app-container" :style="{ '--chat-font-size': pageFontSize + 'px' }">
-    <div 
-      v-if="sidebarOpen" 
-      class="sidebar-overlay" 
+    <div
+      v-if="sidebarOpen"
+      class="sidebar-overlay"
       @click="sidebarOpen = false"
     ></div>
     <Sidebar
@@ -25,15 +25,22 @@
           :theme="theme"
           @toggle-theme="toggleTheme"
           @toggle-page-settings="togglePageSettingsDrawer"
-          @toggle-settings="toggleSettingsDrawer"
+          @toggle-llm-settings="toggleLlmSettingsDrawer"
         />
 
         <LlmSettingsDrawer
-          v-model:show="showSettingsDrawer"
+          ref="llmDrawerRef"
+          v-model:show="showLlmSettingsDrawer"
           v-model:useStream="useStream"
+          :configList="configList"
+          :currentIndex="currentIndex"
           :configForm="configForm"
           @save="updateConfig"
           @reset="resetConfigToDefault"
+          @select-config="selectConfig"
+          @add-config="addConfig"
+          @delete-config="deleteConfig"
+          @rename-config="renameConfig"
         />
 
         <PageSettingsDrawer
@@ -45,7 +52,7 @@
         />
       </div>
 
-      <div class="chat-area">
+      <div class="chat-area" :style="watermarkStyle">
         <div v-if="messages.length === 0" class="empty-state">
           <h1>{{ configForm.model_name || 'LLM Chat' }}</h1>
           <p>{{ t('howCanIHelp') }}</p>
@@ -88,21 +95,21 @@
       />
 
     </main>
-    
+
     <!-- Scroll navigation buttons -->
     <Transition name="fade">
       <div v-if="hasScrollableContent" class="scroll-nav-buttons">
-        <button 
-          v-if="!isAtTop" 
-          class="btn-scroll-nav btn-scroll-top" 
+        <button
+          v-if="!isAtTop"
+          class="btn-scroll-nav btn-scroll-top"
           @click="scrollToTop"
           title="Scroll to top"
         >
           ↑
         </button>
-        <button 
-          v-if="!autoScrollEnabled" 
-          class="btn-scroll-nav btn-scroll-bottom" 
+        <button
+          v-if="!autoScrollEnabled"
+          class="btn-scroll-nav btn-scroll-bottom"
           @click="scrollToBottom(true)"
           title="Scroll to bottom"
         >
@@ -116,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { getSession } from './utils/api';
 import { t } from './utils/i18n';
 
@@ -139,7 +146,7 @@ import { useChat } from './composables/useChat';
 
 // State
 const sidebarOpen = ref(false);
-const showSettingsDrawer = ref(false);
+const showLlmSettingsDrawer = ref(false);
 const showPageSettingsDrawer = ref(false);
 const showImageViewer = ref(false);
 const previewImageUrl = ref('');
@@ -150,20 +157,25 @@ const hasScrollableContent = ref(false);
 // Refs for UI
 const chatInputRef = ref(null);
 const mainContentRef = ref(null);
+const llmDrawerRef = ref(null);
 
 // Initialize Composables
 const { theme, toggleTheme, initTheme } = useTheme();
-const { configForm, loadSettings, resetConfigToDefault, updateConfig } = useConfig();
-const { 
-  sessions, currentSessionId, currentTitle, 
-  fetchSessions, deleteChatSession, clearAll 
+const {
+  configList, currentIndex, configForm,
+  loadSettings, selectConfig, addConfig, deleteConfig, renameConfig, updateConfig,
+  resetConfigToDefault
+} = useConfig();
+const {
+  sessions, currentSessionId, currentTitle,
+  fetchSessions, deleteChatSession, clearAll
 } = useSessions();
-const { 
-  pageFontSize, savePageFontSize, previewPageFontSize, resetPageFontSize 
+const {
+  pageFontSize, savePageFontSize, previewPageFontSize, resetPageFontSize
 } = useFontSize();
 const { isFullWidth } = useLayout();
 
-const { 
+const {
   messages, inputForm, editingIndex, activeStreams, autoScrollEnabled,
   sendMessage, regenerateLast, editMessage, cancelEdit, saveCurrentSession
 } = useChat(currentSessionId, currentTitle, configForm, fetchSessions);
@@ -171,6 +183,34 @@ const {
 // Computed
 const generatingSessionIds = computed(() => {
   return Object.keys(activeStreams.value).filter(id => activeStreams.value[id].isGenerating);
+});
+
+// Watermark adjustable configuration
+const watermarkConfig = {
+  fontSize: 24,
+  color: 'rgba(128, 128, 128, 0.2)',
+  rotation: -30,
+  size: 400,
+  lineHeight: 35
+};
+
+const watermarkStyle = computed(() => {
+  const name = configForm.value.name || '';
+  const model = configForm.value.model_name || '';
+  const { fontSize, color, rotation, size, lineHeight } = watermarkConfig;
+  const center = size / 2;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+    <style>.watermark { fill: ${color}; font-size: ${fontSize}px; font-family: sans-serif; text-anchor: middle; }</style>
+    <text x="${center}" y="${center - lineHeight/2}" transform="rotate(${rotation} ${center} ${center})" class="watermark">${name}</text>
+    <text x="${center}" y="${center + lineHeight/2}" transform="rotate(${rotation} ${center} ${center})" class="watermark">${model}</text>
+  </svg>`;
+  const encoded = btoa(unescape(encodeURIComponent(svg)));
+  return {
+    backgroundImage: `url('data:image/svg+xml;base64,${encoded}')`,
+    backgroundRepeat: 'repeat',
+    backgroundAttachment: 'local'
+  };
 });
 
 // Watchers
@@ -184,21 +224,27 @@ const openImagePreview = (url) => {
   showImageViewer.value = true;
 };
 
-const toggleSettingsDrawer = () => {
-  showSettingsDrawer.value = !showSettingsDrawer.value;
-  if (showSettingsDrawer.value) showPageSettingsDrawer.value = false;
+const toggleLlmSettingsDrawer = () => {
+  if (showLlmSettingsDrawer.value) {
+    if (llmDrawerRef.value?.validate && !llmDrawerRef.value.validate()) return;
+  }
+  showLlmSettingsDrawer.value = !showLlmSettingsDrawer.value;
+  if (showLlmSettingsDrawer.value) showPageSettingsDrawer.value = false;
 };
 
 const togglePageSettingsDrawer = () => {
+  if (showLlmSettingsDrawer.value) {
+    if (llmDrawerRef.value?.validate && !llmDrawerRef.value.validate()) return;
+  }
   showPageSettingsDrawer.value = !showPageSettingsDrawer.value;
-  if (showPageSettingsDrawer.value) showSettingsDrawer.value = false;
+  if (showPageSettingsDrawer.value) showLlmSettingsDrawer.value = false;
 };
 
 const handleScroll = (e) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
   const atBottom = scrollTop + clientHeight >= scrollHeight - 50;
   autoScrollEnabled.value = atBottom;
-  
+
   isAtTop.value = scrollTop < 50;
   hasScrollableContent.value = scrollHeight > clientHeight + 100;
 };
@@ -242,6 +288,14 @@ const handleLoadSession = async (id) => {
     const data = await getSession(id);
     currentSessionId.value = id;
     currentTitle.value = data.title || '___NEW_CHAT___';
+
+    if (data.config_name) {
+      const idx = configList.value.findIndex(c => c.name === data.config_name);
+      if (idx !== -1) {
+        selectConfig(idx);
+      }
+    }
+
     messages.value = (data.messages || []).map(m => ({
       ...m,
       isCollapsed: m.reasoning_content ? true : false
@@ -261,7 +315,7 @@ const handleEditMessage = (index, content) => editMessage(index, content, chatIn
 const handleSendMessage = async (attachments = []) => {
   const result = await sendMessage(attachments, useStream.value, chatInputRef, scrollToBottom);
   if (result === 'CONFIG_NEEDED') {
-    if (!configForm.value.base_url) showSettingsDrawer.value = true;
+    if (!configForm.value.base_url) showLlmSettingsDrawer.value = true;
   }
 };
 
@@ -270,14 +324,30 @@ onMounted(async () => {
   initTheme();
   loadSettings();
   await fetchSessions();
-  
+
   const savedSessionId = localStorage.getItem('lastSessionId');
   if (savedSessionId) {
     handleLoadSession(savedSessionId);
   } else {
     nextTick(() => chatInputRef.value?.focus());
   }
+
+  window.addEventListener('keydown', handleKeyDown);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
+
+const handleKeyDown = (e) => {
+  if (e.key === 'Escape') {
+    if (showLlmSettingsDrawer.value) {
+      if (llmDrawerRef.value?.validate && !llmDrawerRef.value.validate()) return;
+      showLlmSettingsDrawer.value = false;
+    }
+    showPageSettingsDrawer.value = false;
+  }
+};
 </script>
 
 <style scoped>

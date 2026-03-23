@@ -1,23 +1,52 @@
 <template>
   <div class="llm-settings-drawer" :class="{'drawer-open': show}">
     <div class="llm-drawer-header">
-      <h3>{{ t('llmSettingsTitle') }}</h3>
-      <button class="btn-close-llm-drawer" @click="$emit('update:show', false)">✕</button>
+      <div class="header-left">
+        <h3>{{ t('llmSettingsTitle') }}</h3>
+        <div class="config-selector-wrapper">
+          <select 
+            :value="currentIndex" 
+            @change="handleSelectConfig"
+            class="config-select"
+          >
+            <option v-for="(cfg, index) in configList" :key="cfg.name" :value="index">
+              {{ cfg.name }} {{ cfg.isServer ? '(Server)' : '' }}
+            </option>
+          </select>
+          <div class="config-actions">
+            <button class="btn-icon" :title="t('copy')" @click="handleCopyConfig">📋</button>
+            <button 
+              class="btn-icon" 
+              :title="t('rename')" 
+              @click="handleRenameConfig"
+              :disabled="currentIndex === 0"
+            >✏️</button>
+            <button class="btn-icon" :title="t('new')" @click="handleNewConfig">➕</button>
+            <button 
+              class="btn-icon btn-delete" 
+              :title="t('delete')" 
+              @click="handleDeleteConfig"
+              :disabled="currentIndex === 0"
+            >🗑️</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-close-llm-drawer" @click="handleCloseRequest">✕</button>
     </div>
     <div class="llm-drawer-content">
       <div class="llm-form-row">
         <div class="llm-form-group flex-2">
           <label>{{ t('baseUrl') }}</label>
-          <input v-model="localConfig.base_url" type="text" placeholder="http://127.0.0.1:8000/v1" />
+          <input v-model="localConfig.base_url" type="text" placeholder="http://127.0.0.1:8000/v1" :disabled="currentIndex === 0" />
         </div>
         <div class="llm-form-group flex-1">
           <label>{{ t('modelName') }}</label>
-          <input v-model="localConfig.model_name" type="text" placeholder="gpt-4o" />
+          <input v-model="localConfig.model_name" type="text" placeholder="gpt-4o" :disabled="currentIndex === 0" />
         </div>
         <div class="llm-form-group flex-1 llm-api-stream-group">
           <div class="flex-1">
             <label>{{ t('apiKey') }}</label>
-            <input v-model="localConfig.api_key" type="password" placeholder="sk-..." />
+            <input v-model="localConfig.api_key" type="password" placeholder="sk-..." :disabled="currentIndex === 0" />
           </div>
           <div class="llm-stream-toggle-wrapper">
             <label>{{ t('stream') }}</label>
@@ -34,14 +63,14 @@
       <div class="llm-form-row">
         <div class="llm-form-group flex-1">
           <label>{{ t('systemPrompt') }}</label>
-          <textarea v-model="localConfig.system_prompt" class="llm-config-textarea" :placeholder="t('systemPrompt')"></textarea>
+          <textarea v-model="localConfig.system_prompt" class="llm-config-textarea" :placeholder="t('systemPrompt')" :disabled="currentIndex === 0"></textarea>
         </div>
         <div class="llm-form-group flex-1">
           <label>{{ t('extraParams') }}</label>
-          <textarea v-model="localConfig.extra_params" class="llm-config-textarea font-mono" placeholder='{"temperature": 0.7}'></textarea>
+          <textarea v-model="localConfig.extra_params" class="llm-config-textarea font-mono" placeholder='{"temperature": 0.7}' :disabled="currentIndex === 0"></textarea>
         </div>
       </div>
-      <div class="llm-drawer-actions">
+      <div class="llm-drawer-actions" v-if="currentIndex !== 0">
         <span class="error-msg" v-if="configError">{{ configError }}</span>
         <span class="success-msg" v-if="configSuccess">OK!</span>
         <button class="btn-cancel" @click="handleReset">{{ t('reset') }}</button>
@@ -57,11 +86,16 @@ import { t } from '../utils/i18n';
 
 const props = defineProps({
   show: Boolean,
+  configList: Array,
+  currentIndex: Number,
   configForm: Object,
   useStream: Boolean
 });
 
-const emit = defineEmits(['update:show', 'update:useStream', 'save', 'reset']);
+const emit = defineEmits([
+  'update:show', 'update:useStream', 'save', 'reset', 
+  'select-config', 'add-config', 'delete-config', 'rename-config'
+]);
 
 const localConfig = ref({ ...props.configForm });
 const configError = ref('');
@@ -71,12 +105,67 @@ watch(() => props.configForm, (newVal) => {
   localConfig.value = { ...newVal };
 }, { deep: true });
 
+const handleSelectConfig = (e) => {
+  const index = parseInt(e.target.value);
+  if (validate()) {
+    emit('select-config', index);
+  } else {
+    // Reset the dropdown visually if validation fails
+    e.target.value = props.currentIndex;
+  }
+};
+
+const handleRenameConfig = () => {
+  if (props.currentIndex === 0) return;
+  const oldName = props.configList[props.currentIndex].name;
+  const name = prompt(t('enterNewName') || 'Enter new name:', oldName);
+  if (!name || name === oldName) return;
+  
+  if (props.configList.some(c => c.name === name)) {
+    alert(t('nameExists') || 'Name already exists!');
+    return;
+  }
+  
+  emit('rename-config', props.currentIndex, name);
+};
+
+const handleCopyConfig = () => {
+  const name = prompt(t('enterNewConfigName') || 'Enter new configuration name:');
+  if (!name) return;
+  
+  if (props.configList.some(c => c.name === name)) {
+    alert(t('nameExists') || 'Name already exists!');
+    return;
+  }
+  
+  emit('add-config', name, { ...localConfig.value });
+};
+
+const handleNewConfig = () => {
+  const name = prompt(t('enterNewConfigName') || 'Enter new configuration name:');
+  if (!name) return;
+  
+  if (props.configList.some(c => c.name === name)) {
+    alert(t('nameExists') || 'Name already exists!');
+    return;
+  }
+  
+  emit('add-config', name);
+};
+
+const handleDeleteConfig = () => {
+  if (props.currentIndex === 0) return;
+  if (confirm(t('confirmDeleteConfig') || 'Are you sure you want to delete this configuration?')) {
+    emit('delete-config', props.currentIndex);
+  }
+};
+
 const handleSave = () => {
   configError.value = '';
   configSuccess.value = false;
 
   if (!localConfig.value.base_url || !localConfig.value.model_name) {
-    configError.value = "Base URL and Model Name are required.";
+    configError.value = t('configRequired');
     return;
   }
   try {
@@ -84,7 +173,7 @@ const handleSave = () => {
       JSON.parse(localConfig.value.extra_params);
     }
   } catch (e) {
-    configError.value = "Extra Params must be a valid JSON string.";
+    configError.value = t('jsonError');
     return;
   }
   
@@ -99,6 +188,23 @@ const handleReset = () => {
   configSuccess.value = true;
   setTimeout(() => { configSuccess.value = false; }, 2000);
 };
+
+const validate = () => {
+  if (props.currentIndex === 0) return true;
+  if (!localConfig.value.base_url || !localConfig.value.model_name) {
+    configError.value = t('configRequired');
+    return false;
+  }
+  return true;
+};
+
+const handleCloseRequest = () => {
+  if (validate()) {
+    emit('update:show', false);
+  }
+};
+
+defineExpose({ validate });
 </script>
 
 <style scoped>
@@ -127,10 +233,66 @@ const handleReset = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 300px;
+}
+.config-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.config-select {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  max-width: 400px;
+}
+.config-actions {
+  display: flex;
+  gap: 4px;
+}
+.btn-icon {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--text-secondary);
+}
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-delete:hover:not(:disabled) {
+  color: #ef4444;
+  border-color: #ef4444;
 }
 .llm-drawer-header h3 {
   margin: 0;
   font-size: 16px;
+  white-space: nowrap;
 }
 .btn-close-llm-drawer {
   font-size: 18px;
@@ -205,11 +367,17 @@ const handleReset = () => {
 .error-msg {
   color: #ef4444;
   font-size: 13px;
+  animation: shake 0.4s ease-in-out;
 }
 .success-msg {
   color: #10b981;
   font-size: 13px;
   animation: fadeIn 0.3s ease-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 .btn-save {
   padding: 8px 16px;

@@ -115,6 +115,7 @@ Retrieves all local sessions ordered by modification time (descending).
     {
       "id": "1774167627186344",
       "title": "Introduction",
+      "config_name": "My Custom GPT",
       "create_time": "2026-03-22 16:20:27.199",
       "update_time": 1715423851.0
     }
@@ -132,6 +133,7 @@ Retrieves full chat history for a specific `session_id`.
   "code": 0,
   "data": {
     "title": "Session Title",
+    "config_name": "My Custom GPT",
     "messages": [
       {
         "role": "user",
