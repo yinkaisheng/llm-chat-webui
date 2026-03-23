@@ -26,6 +26,8 @@ This is a chat web application based on a locally deployed Large Language Model 
 * **Performance Telemetry**: Displays Time to First Token (TTFT), total generation time, character count, and generation speed under each response.
 * **Adaptive Input Box**: The input box height automatically expands with content; supports image attachments (multimodal chat).
 * **Independent Settings Panel**: A drawer-style configuration panel for hot-reloading Base URL, API Key, Model Name, and System Prompt.
+* **Local Multi-LLM Profiles**: Supports creating, copying, renaming, and deleting multiple local LLM profiles in frontend `localStorage` for quick switching.
+* **Session-Profile Binding**: Each session stores `config_name`, and the corresponding profile is restored automatically when reopening historical sessions.
 
 ### 3. Backend Utilities
 * **HTTP Request Proxy**: Built-in `/api/request` endpoint allowing the frontend to perform cross-origin HTTP requests.

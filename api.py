@@ -93,6 +93,7 @@ async def make_http_request(request: Request, req_data: models.HttpRequestModel 
         # Validate HTTP method
         allowed_methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
         if method not in allowed_methods:
+            logger.warning(f'Unsupported HTTP method from {client_ip}: {method}')
             return {
                 'code': 1,
                 'message': f'Unsupported HTTP method: {method}, supported methods: {", ".join(allowed_methods)}',
@@ -103,6 +104,7 @@ async def make_http_request(request: Request, req_data: models.HttpRequestModel 
         try:
             parsed_url = urlparse(url)
         except Exception as ex:
+            logger.warning(f'Invalid URL format from {client_ip}: {url} - {ex!r}')
             return {
                 'code': 2,
                 'message': f'Invalid URL format: {ex!r}',
@@ -112,6 +114,7 @@ async def make_http_request(request: Request, req_data: models.HttpRequestModel 
         # Security validation: check hostname
         hostname = parsed_url.hostname
         if not hostname:
+            logger.warning(f'URL missing hostname from {client_ip}: {url}')
             return {
                 'code': 3,
                 'message': 'URL missing hostname',
@@ -150,6 +153,7 @@ async def make_http_request(request: Request, req_data: models.HttpRequestModel 
 
         # Validate protocol (only allow HTTP and HTTPS)
         if parsed_url.scheme not in ['http', 'https']:
+            logger.warning(f'Unsupported protocol from {client_ip}: {url} (scheme={parsed_url.scheme})')
             return {
                 'code': 5,
                 'message': f'Unsupported protocol: {parsed_url.scheme}, only http and https are supported',
@@ -313,10 +317,10 @@ async def list_sessions():
                             'title': data.get('title', 'New Chat'),
                             'config_name': data.get('config_name'),
                             'create_time': create_time,
-                            'update_time': os.getmtime(os.path.join(SESSIONS_DIR, file))
+                            'update_time': os.path.getmtime(os.path.join(SESSIONS_DIR, file))
                         })
                 except Exception as e:
-                    logger.debug(f'Failed to parse session file {file}: {e}')
+                    logger.warning(f'Failed to parse session file {file}: {e}')
                     pass
         return {'code': 0, 'message': 'success', 'data': sessions}
     except Exception as e:
@@ -335,6 +339,7 @@ async def get_session(session_id: str):
         except Exception as e:
             logger.error(f'Failed to read session {session_id}: {e}')
             return {'code': 1, 'message': str(e), 'data': None}
+    logger.warning(f'Session not found: {session_id}')
     return {'code': 404, 'message': 'Session not found', 'data': None}
 
 @router.post('/api/sessions/{session_id}', response_model=models.ResponseModel)
@@ -360,6 +365,7 @@ async def delete_session(session_id: str):
         except Exception as e:
             logger.error(f'Failed to delete session {session_id}: {e}')
             return {'code': 1, 'message': str(e), 'data': None}
+    logger.warning(f'Session not found for delete: {session_id}')
     return {'code': 404, 'message': 'Session not found', 'data': None}
 
 @router.delete('/api/sessions', response_model=models.ResponseModel)

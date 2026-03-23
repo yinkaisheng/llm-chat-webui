@@ -55,3 +55,20 @@ When changes are complete and ready for deployment, the source code needs to be 
    ```text
    http://127.0.0.1:9949/chat/
    ```
+
+---
+
+## 4. Local Multi-LLM Profiles
+
+The frontend supports managing multiple LLM profiles in the "LLM Settings" drawer. These profiles are stored locally in browser `localStorage` and are not written to backend `config.yaml`.
+
+**Available actions**:
+1. **Create**: Click `➕` to create a blank profile.
+2. **Copy**: Click `📋` to duplicate the current profile.
+3. **Rename**: Click `✏️` to rename a profile.
+4. **Delete**: Click `🗑️` to delete the current local profile (the server default profile cannot be deleted).
+5. **Switch**: Use the dropdown selector to switch profiles quickly.
+
+**Relationship with sessions**:
+- Each session stores a `config_name`.
+- When reopening a historical session, the frontend tries to restore the matching profile automatically.

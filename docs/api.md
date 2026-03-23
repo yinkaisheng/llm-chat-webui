@@ -61,6 +61,10 @@ Retrieves server start time and process information.
 
 ## LLM Config Management
 
+> **Important Clarification**:
+> The backend only provides a single global config via `/api/config` (stored in `config.yaml`).
+> The "multiple LLM profiles" feature is frontend-local behavior (stored in browser `localStorage`) and does **not** introduce backend profile CRUD endpoints.
+
 ### 4. Get Global Config
 Loads the default LLM connection and authentication settings from `config.yaml`.
 - **URL**: `/api/config`
@@ -106,6 +110,9 @@ Overwrites the default parameters in `config.yaml`, globally resetting LLM behav
 Retrieves all local sessions ordered by modification time (descending).
 - **URL**: `/api/sessions`
 - **Method**: `GET`
+- **Field Note**:
+  - `config_name` is the profile name used by the frontend when this session was saved.
+  - The backend stores and returns this value as session metadata, but does not manage profile definitions.
 - **Response Example**:
 ```json
 {
@@ -127,6 +134,8 @@ Retrieves all local sessions ordered by modification time (descending).
 Retrieves full chat history for a specific `session_id`.
 - **URL**: `/api/sessions/{session_id}`
 - **Method**: `GET`
+- **Field Note**:
+  - `config_name` is optional metadata used by frontend to restore the corresponding local profile.
 - **Response Format**:
 ```json
 {

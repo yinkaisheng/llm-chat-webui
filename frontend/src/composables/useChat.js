@@ -44,12 +44,6 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
       messages.value = [];
     }
 
-    // Abort stream if old session was generating
-    if (oldId && activeStreams.value[oldId] && activeStreams.value[oldId].isGenerating) {
-      activeStreams.value[oldId].abortController?.abort();
-      activeStreams.value[oldId].isGenerating = false;
-    }
-
     const key = getDraftKey(newId);
     const saved = localStorage.getItem(key);
     inputForm.value = saved || '';
@@ -95,7 +89,7 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
         if (data && data.messages) {
           data.messages.push(msg);
           const msgsToSave = data.messages.map(({ isCollapsed, ...rest }) => rest);
-          await saveSession(sessionId, { title: data.title, messages: msgsToSave });
+          await saveSession(sessionId, { title: data.title, config_name: data.config_name, messages: msgsToSave });
         }
       } catch (e) {
         console.error("Failed to append background message", e);
@@ -252,6 +246,7 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
 
         let responseBuffer = '';
         let reasoningBuffer = '';
+        let ssePendingBuffer = '';
         let lastRenderTime = performance.now();
         let hasUnrenderedContent = false;
         const UPDATE_INTERVAL_MS = 100;
@@ -259,9 +254,9 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-
-          const lines = chunk.split('\n');
+          ssePendingBuffer += decoder.decode(value, { stream: true });
+          const lines = ssePendingBuffer.split('\n');
+          ssePendingBuffer = lines.pop() || '';
           for (let line of lines) {
             if (line.startsWith('data: ')) {
               const dataStr = line.slice(6).trim();
@@ -367,6 +362,29 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
   };
 
   const sendMessage = async (attachments = [], useStream, chatInputRef, scrollToBottom) => {
+    const activeSessionId = currentSessionId.value;
+    const activeStreamState = activeStreams.value[activeSessionId];
+
+    // Stop current generation first when user clicks the "Stop" button.
+    if (activeStreamState && activeStreamState.isGenerating) {
+      if (activeStreamState.abortController) activeStreamState.abortController.abort();
+      activeStreamState.isGenerating = false;
+      if (activeStreamState.currentResponse || activeStreamState.currentReasoning) {
+        await appendMessageToSession(activeSessionId, {
+          role: 'assistant',
+          content: activeStreamState.currentResponse,
+          reasoning_content: activeStreamState.currentReasoning,
+          isCollapsed: activeStreamState.isCurrentReasoningCollapsed,
+          meta: activeStreamState.currentMeta ? { ...activeStreamState.currentMeta } : null,
+          time: activeStreamState.currentResponseTime
+        });
+      }
+      activeStreamState.currentResponse = '';
+      activeStreamState.currentReasoning = '';
+      activeStreamState.isCurrentReasoningCollapsed = false;
+      return;
+    }
+
     const text = inputForm.value.trim();
     if (!text && attachments.length === 0) {
       return 'CONFIG_NEEDED';
@@ -377,30 +395,11 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
     }
 
     isSending.value = true;
+    let sendTask = null;
     try {
       await saveCurrentSession();
 
       const sessionId = currentSessionId.value;
-      const streamState = activeStreams.value[sessionId];
-
-      if (streamState && streamState.isGenerating) {
-        if (streamState.abortController) streamState.abortController.abort();
-        streamState.isGenerating = false;
-        if (streamState.currentResponse || streamState.currentReasoning) {
-          await appendMessageToSession(sessionId, {
-            role: 'assistant',
-            content: streamState.currentResponse,
-            reasoning_content: streamState.currentReasoning,
-            isCollapsed: streamState.isCurrentReasoningCollapsed,
-            meta: streamState.currentMeta ? { ...streamState.currentMeta } : null,
-            time: streamState.currentResponseTime
-          });
-        }
-        streamState.currentResponse = '';
-        streamState.currentReasoning = '';
-        streamState.isCurrentReasoningCollapsed = false;
-        return;
-      }
 
       if (editingIndex.value !== null) {
         messages.value = messages.value.slice(0, editingIndex.value);
@@ -441,18 +440,24 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
         autoRenameSession(text || (locale.value === 'zh' ? '图片分析' : 'Image Analysis'), sessionId);
       }
 
-      doSend(useStream, scrollToBottom);
+      sendTask = doSend(useStream, scrollToBottom);
     } finally {
       isSending.value = false;
     }
+    if (sendTask) {
+      await sendTask;
+    }
   };
 
-  const regenerateLast = (useStream, scrollToBottom) => {
+  const regenerateLast = async (useStream, scrollToBottom) => {
     if (messages.value.length === 0) return;
     if (messages.value[messages.value.length-1].role === 'assistant') {
       messages.value.pop();
     }
-    doSend(useStream, scrollToBottom);
+    // Persist truncated history first to avoid restoring stale assistant message
+    // when user switches sessions during regeneration.
+    await saveCurrentSession();
+    await doSend(useStream, scrollToBottom);
   };
 
   return {

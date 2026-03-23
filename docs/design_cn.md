@@ -69,7 +69,16 @@
 
 ---
 
-## 8. 通用 HTTP 代理 API (`/api/request`)
+## 8. 多模型配置与会话绑定
+
+- **多配置结构**：前端以 `configList` 管理多个 LLM 配置档，支持新建、复制、重命名、删除与切换。
+- **本地持久化**：配置列表与当前选中项分别保存到 `localStorage`（`llm_chat_configs`、`llm_chat_config_index`）。
+- **会话绑定**：会话保存时写入 `config_name`，读取历史会话时按名称自动切回对应配置。
+- **兼容策略**：配置缓存异常时会回退到服务端默认配置，避免页面初始化失败。
+
+---
+
+## 9. 通用 HTTP 代理 API (`/api/request`)
 
 后端提供了一个安全的通用 HTTP 代理接口：
 - **安全性**：可配置 `HTTP_REQUEST_BLOCK_LOCAL_IP` 防范 SSRF 攻击，拦截对内网 IP（如 `127.0.0.1`, `192.168.x.x`）的访问。

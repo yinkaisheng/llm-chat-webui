@@ -69,7 +69,16 @@ The frontend uses the `activeStreams` object, keyed by `sessionId`, to store the
 
 ---
 
-## 8. Generic HTTP Proxy API (`/api/request`)
+## 8. Multi-LLM Profiles & Session Binding
+
+- **Profile Model**: The frontend uses `configList` to manage multiple LLM profiles (create/copy/rename/delete/select).
+- **Local Persistence**: Profile list and selected index are stored in browser `localStorage` (`llm_chat_configs`, `llm_chat_config_index`).
+- **Session Binding**: Session payload includes `config_name`; reopening a historical session restores the corresponding profile by name.
+- **Fallback Strategy**: If local profile cache is corrupted, frontend falls back to server default config to keep the app usable.
+
+---
+
+## 9. Generic HTTP Proxy API (`/api/request`)
 
 The backend provides a secure generic HTTP proxy interface:
 - **Security**: Can be configured with `HTTP_REQUEST_BLOCK_LOCAL_IP` to prevent SSRF attacks by blocking access to internal IPs (e.g., `127.0.0.1`, `192.168.x.x`).

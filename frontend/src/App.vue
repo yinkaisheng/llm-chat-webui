@@ -16,7 +16,7 @@
       @clear-all="handleClearAll"
     />
 
-    <main class="main-content" :class="{ 'full-width-mode': isFullWidth }" ref="mainContentRef" @scroll="handleScroll">
+    <main class="main-content" :class="{ 'full-width-mode': isFullWidth }" ref="mainContentRef" @scroll="handleScroll" :style="watermarkStyle">
       <div class="header-container">
         <TopNav
           v-model:sidebarOpen="sidebarOpen"
@@ -52,7 +52,7 @@
         />
       </div>
 
-      <div class="chat-area" :style="watermarkStyle">
+      <div class="chat-area">
         <div v-if="messages.length === 0" class="empty-state">
           <h1>{{ configForm.model_name || 'LLM Chat' }}</h1>
           <p>{{ t('howCanIHelp') }}</p>
@@ -158,6 +158,7 @@ const hasScrollableContent = ref(false);
 const chatInputRef = ref(null);
 const mainContentRef = ref(null);
 const llmDrawerRef = ref(null);
+const latestLoadSessionToken = ref(0);
 
 // Initialize Composables
 const { theme, toggleTheme, initTheme } = useTheme();
@@ -189,7 +190,7 @@ const generatingSessionIds = computed(() => {
 const watermarkConfig = {
   fontSize: 24,
   color: 'rgba(128, 128, 128, 0.2)',
-  rotation: -30,
+  rotation: -45,
   size: 400,
   lineHeight: 35
 };
@@ -209,7 +210,8 @@ const watermarkStyle = computed(() => {
   return {
     backgroundImage: `url('data:image/svg+xml;base64,${encoded}')`,
     backgroundRepeat: 'repeat',
-    backgroundAttachment: 'local'
+    // Put watermark on the scroll container so it won't move with message content.
+    backgroundAttachment: 'fixed'
   };
 });
 
@@ -284,8 +286,10 @@ const startNewChat = () => {
 };
 
 const handleLoadSession = async (id) => {
+  const requestToken = ++latestLoadSessionToken.value;
   try {
     const data = await getSession(id);
+    if (requestToken !== latestLoadSessionToken.value) return;
     currentSessionId.value = id;
     currentTitle.value = data.title || '___NEW_CHAT___';
 
@@ -300,6 +304,7 @@ const handleLoadSession = async (id) => {
       ...m,
       isCollapsed: m.reasoning_content ? true : false
     }));
+    if (requestToken !== latestLoadSessionToken.value) return;
     editingIndex.value = null;
     scrollToBottom(true);
     if (window.innerWidth <= 768) sidebarOpen.value = false;

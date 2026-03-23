@@ -28,9 +28,21 @@ export function useConfig() {
       const cached = localStorage.getItem('llm_chat_configs');
       let configs = [];
       if (cached) {
-        configs = JSON.parse(cached);
-        // Ensure the first one is always the latest server config
-        configs[0] = serverConfig;
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            configs = parsed;
+            // Ensure the first one is always the latest server config
+            configs[0] = serverConfig;
+          } else {
+            configs = [serverConfig];
+            localStorage.removeItem('llm_chat_configs');
+          }
+        } catch (e) {
+          console.error('Invalid cached llm_chat_configs, fallback to server config', e);
+          configs = [serverConfig];
+          localStorage.removeItem('llm_chat_configs');
+        }
       } else {
         configs = [serverConfig];
       }
@@ -38,8 +50,10 @@ export function useConfig() {
       configList.value = configs;
       
       const savedIndex = localStorage.getItem('llm_chat_config_index');
-      currentIndex.value = savedIndex !== null ? parseInt(savedIndex) : 0;
+      const parsedIndex = savedIndex !== null ? parseInt(savedIndex, 10) : 0;
+      currentIndex.value = Number.isInteger(parsedIndex) ? parsedIndex : 0;
       if (currentIndex.value >= configList.value.length) currentIndex.value = 0;
+      if (currentIndex.value < 0) currentIndex.value = 0;
       
       configForm.value = { ...configList.value[currentIndex.value] };
     } catch (err) {

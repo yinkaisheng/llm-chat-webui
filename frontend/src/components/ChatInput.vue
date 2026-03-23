@@ -27,7 +27,7 @@
             <polyline points="21 15 16 10 5 21"></polyline>
           </svg>
         </button>
-        <input type="file" ref="fileInputRef" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff,image/svg+xml" multiple class="hidden-file-input" @change="handleFileSelect" />
+        <input type="file" ref="fileInputRef" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff" multiple class="hidden-file-input" @change="handleFileSelect" />
 
         <button class="btn-send" @click="emitSend" :disabled="isGenerating && !canStopAndComplete">
           {{ isGenerating ? '⏹ ' + t('stop') : (isEditing ? '➤ ' + t('update') : '➤ ' + t('send')) }}
@@ -204,6 +204,7 @@ defineExpose({ focus, autoResize, clearAttachments, setAttachments });
   justify-content: space-between;
   align-items: center;
   margin-top: 4px;
+  margin-bottom: -2px;
   padding-top: 8px;
   border-top: 1px solid var(--border-color);
 }
