@@ -23,7 +23,7 @@ This is a chat web application based on a locally deployed Large Language Model 
 ### 2. UI & Interaction Design
 * **Responsive Layout Toggle**: Switch between "Full Width (100%)" and "Standard Reading Mode (80%)" with one click.
 * **Multi-theme Support**: Built-in Light and Dark modes, with code syntax highlighting switching synchronously.
-* **Performance Telemetry**: Displays Time to First Token (TTFT), total generation time, character count, and generation speed under each response.
+* **Performance Telemetry**: Displays Time to First Token (TTFT), total generation time, output character count, and generation speed under each response.
 * **Adaptive Input Box**: The input box height automatically expands with content; supports image attachments (multimodal chat).
 * **Independent Settings Panel**: A drawer-style configuration panel for hot-reloading Base URL, API Key, Model Name, and System Prompt.
 * **Local Multi-LLM Profiles**: Supports creating, copying, renaming, and deleting multiple local LLM profiles in frontend `localStorage` for quick switching.

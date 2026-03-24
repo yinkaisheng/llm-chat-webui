@@ -211,7 +211,22 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
         const outputReasoning = data.choices[0].message.reasoning_content || data.choices[0].message.reasoning || '';
 
         let meta = null;
-        if (data.usage?.total_time) {
+        const llamaT = data.timings;
+        const hasLlamaTimings = llamaT && (llamaT.predicted_n != null || llamaT.predicted_per_second != null);
+        if (hasLlamaTimings) {
+          const wall = data.usage?.total_time || ttftSec;
+          meta = {
+            ttft: ttftSec,
+            total_time: wall,
+            total_chars: output.length + outputReasoning.length,
+            speed_chars: wall > 0 ? (output.length + outputReasoning.length) / wall : 0,
+            total_tokens: null,
+            speed_tokens: null,
+            predicted_n: llamaT.predicted_n,
+            predicted_per_second: llamaT.predicted_per_second,
+            from_llama_timings: true
+          };
+        } else if (data.usage?.total_time) {
           const genTokens = data.usage.completion_tokens || 0;
           meta = {
             ttft: ttftSec,
@@ -263,6 +278,8 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
               if (dataStr === '[DONE]') continue;
               if (dataStr.startsWith('[TELEMETRY] ')) {
                  const finalMeta = JSON.parse(dataStr.slice(12));
+                 const prev = streamState.currentMeta || {};
+                 const useLlama = prev.from_llama_timings;
                  const f_ttft = streamState.currentMeta ? streamState.currentMeta.ttft : (finalMeta.total_time || 0);
                  streamState.currentMeta = {
                    ...finalMeta,
@@ -270,9 +287,14 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
                    total_time: finalMeta.total_time,
                    total_chars: responseBuffer.length + reasoningBuffer.length,
                    speed_chars: finalMeta.total_time > 0 ? (responseBuffer.length + reasoningBuffer.length) / finalMeta.total_time : 0,
-                   total_tokens: finalMeta.total_tokens !== undefined ? finalMeta.total_tokens : null,
-                   speed_tokens: finalMeta.total_tokens && finalMeta.total_time > 0 ? (finalMeta.total_tokens / finalMeta.total_time) : null
+                   total_tokens: useLlama ? null : (finalMeta.total_tokens !== undefined ? finalMeta.total_tokens : null),
+                   speed_tokens: useLlama ? null : (finalMeta.total_tokens && finalMeta.total_time > 0 ? (finalMeta.total_tokens / finalMeta.total_time) : null)
                  };
+                 if (useLlama) {
+                   streamState.currentMeta.predicted_n = prev.predicted_n;
+                   streamState.currentMeta.predicted_per_second = prev.predicted_per_second;
+                   streamState.currentMeta.from_llama_timings = true;
+                 }
                  continue;
               }
               try {
@@ -282,13 +304,37 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
                   hasUnrenderedContent = true;
                   continue;
                 }
-                const deltaReasoning = data.choices[0].delta.reasoning_content || data.choices[0].delta.reasoning || '';
-                const delta = data.choices[0].delta.content || '';
+                const lt = data.timings;
+                if (lt && typeof lt === 'object' && (lt.predicted_n != null || lt.predicted_per_second != null)) {
+                  if (!streamState.currentMeta) {
+                    streamState.currentMeta = {
+                      ttft: firstTokenTime ? (firstTokenTime - startTime) / 1000 : null,
+                      total_time: null,
+                      total_chars: 0,
+                      speed_chars: 0,
+                      total_tokens: null,
+                      speed_tokens: null,
+                      predicted_n: lt.predicted_n,
+                      predicted_per_second: lt.predicted_per_second,
+                      from_llama_timings: true
+                    };
+                  } else {
+                    streamState.currentMeta.predicted_n = lt.predicted_n;
+                    streamState.currentMeta.predicted_per_second = lt.predicted_per_second;
+                    streamState.currentMeta.from_llama_timings = true;
+                    streamState.currentMeta.total_tokens = null;
+                    streamState.currentMeta.speed_tokens = null;
+                  }
+                }
+                const choice0 = data.choices && data.choices[0];
+                if (!choice0) continue;
+                const deltaReasoning = choice0.delta?.reasoning_content || choice0.delta?.reasoning || '';
+                const delta = choice0.delta?.content || '';
 
                 if (deltaReasoning || delta) {
                   if (!firstTokenTime) {
                     firstTokenTime = performance.now();
-                    streamState.currentMeta = {
+                    const base = {
                       ttft: (firstTokenTime - startTime) / 1000,
                       total_time: null,
                       total_chars: 0,
@@ -296,6 +342,16 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
                       total_tokens: null,
                       speed_tokens: null
                     };
+                    if (streamState.currentMeta?.from_llama_timings) {
+                      streamState.currentMeta = {
+                        ...base,
+                        predicted_n: streamState.currentMeta.predicted_n,
+                        predicted_per_second: streamState.currentMeta.predicted_per_second,
+                        from_llama_timings: true
+                      };
+                    } else {
+                      streamState.currentMeta = base;
+                    }
                   }
                 }
 

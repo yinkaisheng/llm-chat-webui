@@ -201,6 +201,7 @@ Core API for LLM communication. Requests are proxied to the configured internal 
 - **Response (Streamed)**: Returns `text/event-stream`.
   - Incremental content follows standard OpenAI streaming format.
   - Ends with a `data: [TELEMETRY] { "ttft": ..., "total_time": ..., "total_chars": ..., "total_tokens": ... }` line before disconnection.
+- **llama.cpp / llama-server (`timings_per_token`)**: If the upstream supports it, pass `"timings_per_token": true` inside `extra_params` (or the vendor’s equivalent). SSE chunks may then include a top-level `timings` object, e.g. `predicted_n` (token count so far) and `predicted_per_second`. The web UI prefers these over `usage` for token count and token speed in the message meta row when `timings` is present.
 
 ---
 

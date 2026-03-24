@@ -29,16 +29,23 @@
       <div class="message-meta" v-if="message.meta">
         <span v-if="message.meta.ttft !== undefined && message.meta.ttft !== null">{{ t('firstToken') }}: {{ message.meta.ttft.toFixed(3) }}s</span>
         <span v-if="message.meta.total_time !== undefined && message.meta.total_time !== null">{{ t('totalTime') }}: {{ message.meta.total_time.toFixed(1) }}s</span>
-        <span v-if="message.meta.total_chars !== undefined && message.meta.total_chars !== null">{{ t('totalChars') }}: {{ message.meta.total_chars }}</span>
+        <span v-if="message.meta.total_chars !== undefined && message.meta.total_chars !== null">{{ t('outputChars') }}: {{ message.meta.total_chars }}</span>
         <span v-if="message.meta.speed_chars !== undefined && message.meta.speed_chars !== null">{{ t('speed') }}: {{ message.meta.speed_chars.toFixed(1) }} {{ t('charsUnit') }}/s</span>
-        <span v-if="message.meta.total_tokens !== undefined && message.meta.total_tokens !== null">{{ t('tokens') }}: {{ message.meta.total_tokens }}</span>
-        <span v-if="message.meta.speed_tokens !== undefined && message.meta.speed_tokens !== null">{{ t('speed') }}: {{ message.meta.speed_tokens.toFixed(1) }} {{ t('tokens') }}/s</span>
+        <template v-if="showLlamaTimingsMeta">
+          <span v-if="message.meta.predicted_n != null">{{ t('outputTokens') }}: {{ message.meta.predicted_n }}</span>
+          <span v-if="message.meta.predicted_per_second != null">{{ t('speed') }}: {{ message.meta.predicted_per_second.toFixed(2) }} {{ t('tokens') }}/s</span>
+        </template>
+        <template v-else>
+          <span v-if="message.meta.total_tokens !== undefined && message.meta.total_tokens !== null">{{ t('outputTokens') }}: {{ message.meta.total_tokens }}</span>
+          <span v-if="message.meta.speed_tokens !== undefined && message.meta.speed_tokens !== null">{{ t('speed') }}: {{ message.meta.speed_tokens.toFixed(2) }} {{ t('tokens') }}/s</span>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { parseMarkdown } from '../utils/markdown';
 import { copyToClipboard } from '../utils/clipboard';
 import { t, locale } from '../utils/i18n';
@@ -48,6 +55,13 @@ const props = defineProps({
     type: Object,
     required: true
   }
+});
+
+/** llama-server SSE: timings.predicted_n / predicted_per_second (timings_per_token) */
+const showLlamaTimingsMeta = computed(() => {
+  const m = props.message.meta;
+  if (!m) return false;
+  return m.predicted_n != null || m.predicted_per_second != null;
 });
 
 const emit = defineEmits(['edit', 'update:collapse', 'preview-image']);

@@ -190,7 +190,7 @@ const generatingSessionIds = computed(() => {
 const watermarkConfig = {
   fontSize: 24,
   color: 'rgba(128, 128, 128, 0.2)',
-  rotation: -45,
+  rotation: -30,
   size: 400,
   lineHeight: 35
 };
