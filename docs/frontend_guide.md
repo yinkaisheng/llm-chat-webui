@@ -53,7 +53,7 @@ When changes are complete and ready for deployment, the source code needs to be 
 
    Access the backend URL to see the result:
    ```text
-   http://127.0.0.1:9949/chat/
+   http://localhost:9949/chat/index.html
    ```
 
 ---
@@ -72,3 +72,4 @@ The frontend supports managing multiple LLM profiles in the "LLM Settings" drawe
 **Relationship with sessions**:
 - Each session stores a `config_name`.
 - When reopening a historical session, the frontend tries to restore the matching profile automatically.
+

@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="image-viewer-overlay" @click.self="close">
     <div class="viewer-toolbar">
-      <span class="zoom-info">{{ Math.round(scale * 100) }}%</span>
+      <span class="zoom-info">{{ zoomInfoText }}</span>
       <button class="btn-tool" @click="zoomIn" :title="t('zoomIn')">🔍+</button>
       <button class="btn-tool" @click="zoomOut" :title="t('zoomOut')">🔍-</button>
       <button class="btn-tool" @click="reset1to1">{{ t('actualSize') }}</button>
@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { t } from '../utils/i18n';
 
 const props = defineProps({
@@ -39,6 +39,16 @@ const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
 const imgRef = ref(null);
 const naturalSize = ref({ w: 0, h: 0 });
+
+const zoomInfoText = computed(() => {
+  const percent = `${Math.round(scale.value * 100)}%`;
+  if (!naturalSize.value.w || !naturalSize.value.h) {
+    return percent;
+  }
+  const displayW = Math.max(1, Math.round(naturalSize.value.w * scale.value));
+  const displayH = Math.max(1, Math.round(naturalSize.value.h * scale.value));
+  return `${percent} ${displayW} x ${displayH}`;
+});
 
 const close = () => {
   emit('update:show', false);

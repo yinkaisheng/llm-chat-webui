@@ -1,7 +1,13 @@
 # LLM Chat Web App
 
+[English README](README.md)
+
 ## 📝 项目简介 (Project Introduction)
 本项目是一个基于本地部署大语言模型（LLM）的聊天 Web 应用，旨在提供一个简洁、实用的对话界面。
+
+本项目采用 Vibe Coding 方式进行开发。
+
+**兼容性说明**：目前仅在通过 `vLLM` 与 `llama-server` 部署的 Qwen3.5 模型上完成测试。
 
 **核心架构**：
 - **后端**：使用 **FastAPI** 异步框架，主要负责 LLM API 代理、配置管理及会话持久化。启动入口为 `llm_chat_server.py`。
@@ -26,19 +32,28 @@
 * **性能监控可视化**：每条回复下方实时显示首字延迟 (TTFT)、总生成时间、输出字数及生成速度等。
 * **自适应输入框**：输入框高度随内容自动扩展，支持图片附件上传（多模态对话）。
 * **独立设置面板**：右侧抽屉式配置面板，支持热重载修改 Base URL、API Key、Model Name 及 System Prompt。
-* **多模型配置本地保存**：支持在前端本地创建、复制、重命名、删除多个 LLM 配置档（保存于浏览器 `localStorage`），并可在会话间快速切换。
+* **多模型配置本地保存**：支持在前端本地创建、复制、重命名、删除多个 LLM 配置（保存于浏览器 `localStorage`），并可在会话间快速切换。
 * **会话与模型配置关联**：每个会话会记录 `config_name`，切回历史会话时会自动恢复当时使用的模型配置。
 
 ### 3. 后端实用工具
 * **HTTP 请求中转**：内置 `/api/request` 代理接口，支持前端执行跨域 HTTP 请求。
-* **标准化日志**：提供带彩色显示的后台运行日志，方便开发者监控模型调用细节。
+
+---
+
+## 🖼️ 界面截图 (Screenshots)
+
+### 配置面板
+![配置面板截图](images/config.png)
+
+### 聊天记录
+![聊天记录截图](images/chat.png)
 
 ---
 
 ## 📁 目录结构 (Directory Structure)
 
 ```text
-llm-chat/
+llm-chat-webui/
 ├── frontend/               # Vue3 + Vite 前端源代码
 ├── static/                 # 前端打包后的静态文件，供 FastAPI 托管
 ├── sessions/               # 对话历史记录存储目录 (JSON)
@@ -84,7 +99,7 @@ llm-chat/
    ```bash
    npm run build
    ```
-   随后将生成的 `dist/` 文件拷贝至后端 `static/` 目录下即可完成托管部署。
+   随后将生成的 `frontend/dist/` 文件拷贝至后端 `static/` 目录下即可完成托管部署，然后访问 `http://localhost:9949/chat/index.html`。
 
 ---
 
@@ -99,3 +114,5 @@ llm-chat/
 - [前端开发指南](docs/frontend_guide_cn.md) / [Frontend Development Guide](docs/frontend_guide.md)
 - [API 接口文档 (API Documentation)](docs/api.md)
 - [设计规范 (Design Specification)](docs/design_cn.md)
+
+

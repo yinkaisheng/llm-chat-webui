@@ -1,7 +1,13 @@
 # LLM Chat Web App
 
+[中文文档](README_CN.md)
+
 ## 📝 Project Introduction
 This is a chat web application based on a locally deployed Large Language Model (LLM), designed to provide a simple and practical conversational interface.
+
+This project is developed with Vibe Coding.
+
+**Compatibility Note**: This project has only been tested with Qwen3.5 models deployed via `vLLM` and `llama-server`.
 
 **Core Architecture**:
 - **Backend**: Built with **FastAPI** asynchronous framework, responsible for LLM API proxy, configuration management, and session persistence. The entry point is `llm_chat_server.py`.
@@ -31,14 +37,23 @@ This is a chat web application based on a locally deployed Large Language Model 
 
 ### 3. Backend Utilities
 * **HTTP Request Proxy**: Built-in `/api/request` endpoint allowing the frontend to perform cross-origin HTTP requests.
-* **Standardized Logging**: Provides color-coded backend logs for monitoring model invocation details.
+
+---
+
+## 🖼️ Screenshots
+
+### Configuration Panel
+![Configuration Panel](images/config.png)
+
+### Chat History
+![Chat History](images/chat.png)
 
 ---
 
 ## 📁 Directory Structure
 
 ```text
-llm-chat/
+llm-chat-webui/
 ├── frontend/               # Vue3 + Vite frontend source code
 ├── static/                 # Frontend production build, hosted by FastAPI
 ├── sessions/               # Chat history storage directory (JSON)
@@ -84,7 +99,7 @@ llm-chat/
    ```bash
    npm run build
    ```
-   Then copy the generated `dist/` files to the backend `static/` directory for deployment.
+   Then copy the generated `frontend/dist/` files to the backend `static/` directory for deployment, and then visit `http://localhost:9949/chat/index.html`.
 
 ---
 
@@ -99,3 +114,5 @@ llm-chat/
 - [Frontend Development Guide](docs/frontend_guide.md) / [前端开发指南](docs/frontend_guide_cn.md)
 - [API Documentation (API 接口文档)](docs/api.md)
 - [Design Specification (设计规范)](docs/design.md)
+
+

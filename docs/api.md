@@ -1,6 +1,6 @@
 # LLM Chat Backend API Documentation
 
-This document lists the core backend API endpoints for `llm-chat`, including descriptions, request bodies, and response examples.
+This document lists the core backend API endpoints for `llm-chat-webui`, including descriptions, request bodies, and response examples.
 
 ---
 
@@ -146,7 +146,7 @@ Retrieves full chat history for a specific `session_id`.
     "messages": [
       {
         "role": "user",
-        "content": "Hello", 
+        "content": "Hello",
         "time": "2026-03-22 10:00:00"
       },
       {

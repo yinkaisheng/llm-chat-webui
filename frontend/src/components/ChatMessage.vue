@@ -21,7 +21,9 @@
       </details>
       <div v-if="Array.isArray(message.content)" class="message-content message-multimodal">
         <template v-for="(part, idx) in message.content" :key="idx">
-          <img v-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-attached-image" @click.stop="$emit('preview-image', part.image_url.url)" />
+          <div v-if="part.type === 'image_url'" class="chat-image-item">
+            <img :src="part.image_url.url" class="chat-attached-image" @click.stop="$emit('preview-image', part.image_url.url)" />
+          </div>
           <div v-else-if="part.type === 'text'" class="markdown-body" v-html="renderMarkdown(part.text)" @click="handleCodeCopy"></div>
         </template>
       </div>
@@ -205,11 +207,18 @@ const handleCodeCopy = async (event) => {
   width: auto;
   height: auto;
   border-radius: 8px;
-  margin-bottom: 12px;
   display: block;
-  object-fit: scale-down;
   cursor: zoom-in;
   transition: transform 0.2s ease;
+}
+.chat-image-item {
+  /* Keep image block height tight to intrinsic image size. */
+  display: inline-flex;
+  align-items: flex-start;
+  line-height: 0;
+  width: fit-content;
+  max-width: 100%;
+  margin: 4px 0;
 }
 .chat-attached-image:hover {
   transform: scale(1.02);
@@ -217,6 +226,8 @@ const handleCodeCopy = async (event) => {
 .message-multimodal {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 .message-content :deep(p),
 .message-content :deep(li),
