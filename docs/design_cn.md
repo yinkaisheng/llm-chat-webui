@@ -76,6 +76,38 @@
 - **会话绑定**：会话保存时写入 `config_name`，读取历史会话时按名称自动切回对应配置。
 - **兼容策略**：配置缓存异常时会回退到服务端默认配置，避免页面初始化失败。
 
+### 8.1 模块分层与职责
+- `useConfig.js`：配置状态中心，负责加载、切换、增删改名、持久化。
+- `LlmSettingsDrawer.vue`：配置 UI 输入层，负责触发 `select/add/delete/rename/save/reset` 事件，不直接操作 `localStorage`。
+- `App.vue`：协调层，将 `useConfig` 方法下发到抽屉组件，并在加载会话时根据 `config_name` 恢复配置。
+- `useChat.js`：会话保存层，保存会话时把 `configForm.name` 写入 `config_name` 字段。
+
+### 8.2 启动加载流程（`loadSettings`）
+1. 先请求后端 `/api/config` 获得最新全局配置，构造 `serverConfig`（`isServer: true`）。
+2. 读取本地 `llm_chat_configs`：
+   - 若结构合法且有数据：强制覆盖 `configs[0] = serverConfig`（保证第一个配置永远是最新后端配置）。
+   - 若为空、损坏或解析异常：回退为 `[serverConfig]`，并清理坏缓存。
+3. 读取 `llm_chat_config_index` 并做边界修正（非整数、越界、负数都回退到 `0`）。
+4. 用 `currentIndex` 对应项初始化 `configForm`。
+
+### 8.3 配置操作细节
+- **切换**（`selectConfig`）：更新 `currentIndex` 与 `configForm`，并立即保存选中索引。
+- **保存编辑**（`updateConfig`）：禁止修改 `index=0`（Server）；其余项用 `splice` 覆盖，保证 Vue 对数组变更可追踪。
+- **新增**（`addConfig`）：支持空白新增与复制新增，新增后自动切换到新配置。
+- **删除**（`deleteConfig`）：禁止删除 `index=0`；删除后修正 `currentIndex` 并刷新 `configForm`。
+- **重命名**（`renameConfig`）：禁止改名 `index=0`；通过 `splice` 更新名字并同步当前表单名。
+
+### 8.4 会话恢复策略（`App.vue`）
+- 加载会话详情后，如果存在 `data.config_name`，则在 `configList` 里按 `name` 精确匹配。
+- 命中后调用 `selectConfig(idx)` 切换；未命中则保持当前配置，避免会话加载失败。
+- 该策略确保“配置被删除/改名后”历史会话仍能打开，只是不会自动切换到已不存在的配置。
+
+### 8.5 命名交互实现与兼容性
+- 当前“重命名/复制”在 `LlmSettingsDrawer.vue` 使用系统 `prompt`。
+- 默认值通过 `prompt(message, defaultValue)` 传入：重命名为 `${oldName}-New`，复制为 `${oldName}-Copy`。
+- `prompt` 行为由宿主环境实现，默认值展示和光标/选中行为在不同环境可能有差异；这属于平台兼容性，不是业务校验逻辑错误。
+- 若要获得一致交互（预填、自动全选、键盘行为、样式统一），应改为自定义对话框组件。
+
 ---
 
 ## 9. 通用 HTTP 代理 API (`/api/request`)

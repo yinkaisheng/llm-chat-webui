@@ -76,6 +76,38 @@ The frontend uses the `activeStreams` object, keyed by `sessionId`, to store the
 - **Session Binding**: Session payload includes `config_name`; reopening a historical session restores the corresponding profile by name.
 - **Fallback Strategy**: If local profile cache is corrupted, frontend falls back to server default config to keep the app usable.
 
+### 8.1 Module Layers and Responsibilities
+- `useConfig.js`: profile state center; handles load/select/create/delete/rename/update and persistence.
+- `LlmSettingsDrawer.vue`: UI input layer; emits `select/add/delete/rename/save/reset` events and does not touch `localStorage` directly.
+- `App.vue`: orchestration layer; wires drawer events to `useConfig` and restores profile by `config_name` when loading sessions.
+- `useChat.js`: session persistence layer; writes `configForm.name` into `config_name` when saving a session.
+
+### 8.2 Startup Load Flow (`loadSettings`)
+1. Request backend `/api/config` and build `serverConfig` (`isServer: true`).
+2. Read local `llm_chat_configs`:
+   - If valid and non-empty: force `configs[0] = serverConfig` (first profile is always latest backend server config).
+   - If empty/corrupted/parse-failed: fallback to `[serverConfig]` and clear invalid cache.
+3. Read `llm_chat_config_index` and sanitize bounds (non-integer/out-of-range/negative -> `0`).
+4. Initialize `configForm` from `configList[currentIndex]`.
+
+### 8.3 Profile Operation Details
+- **Select** (`selectConfig`): updates `currentIndex` and `configForm`, and persists selected index immediately.
+- **Save edits** (`updateConfig`): blocks `index=0` updates (Server profile); updates others with `splice` to guarantee Vue reactivity.
+- **Add** (`addConfig`): supports blank creation and copy-based creation; auto-selects the newly added profile.
+- **Delete** (`deleteConfig`): blocks deleting `index=0`; adjusts `currentIndex` and refreshes `configForm`.
+- **Rename** (`renameConfig`): blocks renaming `index=0`; updates via `splice` and syncs current form name when needed.
+
+### 8.4 Session Restore Strategy (`App.vue`)
+- After session details are loaded, if `data.config_name` exists, frontend performs exact-name lookup in `configList`.
+- On match, call `selectConfig(idx)`; on miss, keep current profile to avoid blocking session loading.
+- This ensures old sessions still open even when their historical profile was deleted or renamed.
+
+### 8.5 Naming Interaction and Runtime Compatibility
+- Current rename/copy UX in `LlmSettingsDrawer.vue` uses browser-native `prompt`.
+- Default text is passed by `prompt(message, defaultValue)`: rename `${oldName}-New`, copy `${oldName}-Copy`.
+- Since `prompt` is host-implemented, default-value rendering and caret/selection behavior may vary by environment.
+- If strict and consistent UX is required (prefill + auto-select + keyboard behavior + styling), replace with a custom dialog component.
+
 ---
 
 ## 9. Generic HTTP Proxy API (`/api/request`)

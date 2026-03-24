@@ -73,3 +73,15 @@ The frontend supports managing multiple LLM profiles in the "LLM Settings" drawe
 - Each session stores a `config_name`.
 - When reopening a historical session, the frontend tries to restore the matching profile automatically.
 
+### 4.1 Naming Dialog Behavior (Rename/Copy)
+- The current implementation uses browser-native `prompt` dialogs instead of a custom modal component.
+- Rename default value: `${oldName}-New`; copy default value: `${oldName}-Copy`.
+- Because `prompt` is implemented by the browser/host runtime, default-text rendering, caret position, and text-selection behavior may vary across environments (browser, WebView, IDE embedded preview).
+- If you need a consistent UX with guaranteed prefill + auto-select + custom style, replace `prompt` with a custom frontend dialog.
+
+### 4.2 Persistence & Restore Details
+- Profile array storage key: `llm_chat_configs`.
+- Selected index storage key: `llm_chat_config_index`.
+- At startup, frontend fetches latest backend config and force-overwrites `configList[0]` (Server profile) to keep default profile synced with backend state.
+- If cached JSON is corrupted or invalid, frontend clears the cache and falls back to a single Server profile to avoid initialization failure.
+

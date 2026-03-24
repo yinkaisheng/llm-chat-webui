@@ -4,8 +4,8 @@
       <div class="header-left">
         <h3>{{ t('llmSettingsTitle') }}</h3>
         <div class="config-selector-wrapper">
-          <select 
-            :value="currentIndex" 
+          <select
+            :value="currentIndex"
             @change="handleSelectConfig"
             class="config-select"
           >
@@ -15,16 +15,16 @@
           </select>
           <div class="config-actions">
             <button class="btn-icon" :title="t('copy')" @click="handleCopyConfig">📋</button>
-            <button 
-              class="btn-icon" 
-              :title="t('rename')" 
+            <button
+              class="btn-icon"
+              :title="t('rename')"
               @click="handleRenameConfig"
               :disabled="currentIndex === 0"
             >✏️</button>
             <button class="btn-icon" :title="t('new')" @click="handleNewConfig">➕</button>
-            <button 
-              class="btn-icon btn-delete" 
-              :title="t('delete')" 
+            <button
+              class="btn-icon btn-delete"
+              :title="t('delete')"
               @click="handleDeleteConfig"
               :disabled="currentIndex === 0"
             >🗑️</button>
@@ -93,7 +93,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  'update:show', 'update:useStream', 'save', 'reset', 
+  'update:show', 'update:useStream', 'save', 'reset',
   'select-config', 'add-config', 'delete-config', 'rename-config'
 ]);
 
@@ -118,38 +118,39 @@ const handleSelectConfig = (e) => {
 const handleRenameConfig = () => {
   if (props.currentIndex === 0) return;
   const oldName = props.configList[props.currentIndex].name;
-  const name = prompt(t('enterNewName') || 'Enter new name:', oldName);
+  const name = prompt(t('enterNewName') || 'Enter new name:', `${oldName}-New`);
   if (!name || name === oldName) return;
-  
+
   if (props.configList.some(c => c.name === name)) {
     alert(t('nameExists') || 'Name already exists!');
     return;
   }
-  
+
   emit('rename-config', props.currentIndex, name);
 };
 
 const handleCopyConfig = () => {
-  const name = prompt(t('enterNewConfigName') || 'Enter new configuration name:');
+  const oldName = props.configList[props.currentIndex].name;
+  const name = prompt(t('enterNewConfigName') || 'Enter new configuration name:', `${oldName}-Copy`);
   if (!name) return;
-  
+
   if (props.configList.some(c => c.name === name)) {
     alert(t('nameExists') || 'Name already exists!');
     return;
   }
-  
+
   emit('add-config', name, { ...localConfig.value });
 };
 
 const handleNewConfig = () => {
   const name = prompt(t('enterNewConfigName') || 'Enter new configuration name:');
   if (!name) return;
-  
+
   if (props.configList.some(c => c.name === name)) {
     alert(t('nameExists') || 'Name already exists!');
     return;
   }
-  
+
   emit('add-config', name);
 };
 
@@ -176,7 +177,7 @@ const handleSave = () => {
     configError.value = t('jsonError');
     return;
   }
-  
+
   emit('save', { ...localConfig.value });
   configSuccess.value = true;
   setTimeout(() => { configSuccess.value = false; }, 2000);
@@ -224,7 +225,7 @@ defineExpose({ validate });
   padding: 0 16px;
 }
 .llm-settings-drawer.drawer-open {
-  max-height: calc(100vh - 100px); 
+  max-height: calc(100vh - 100px);
   padding: 16px;
   overflow-y: auto;
 }

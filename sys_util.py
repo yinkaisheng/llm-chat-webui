@@ -459,8 +459,8 @@ echo "$(date '+%Y-%m-%d %H:%M:%S') call {docker_compose_cmd} down again"
 {docker_compose_cmd} -f "{docker_compose_file}" down
 sleep 2
 echo "$(date '+%Y-%m-%d %H:%M:%S') call {docker_compose_cmd} up -d"
-{docker_compose_cmd} -f "{docker_compose_file}" up -d
-echo "$(date '+%Y-%m-%d %H:%M:%S') call {docker_compose_cmd} up -d done"
+{docker_compose_cmd} -f "{docker_compose_file}" up -d --remove-orphans
+echo "$(date '+%Y-%m-%d %H:%M:%S') call {docker_compose_cmd}  up -d done"
 '''
     install_timer_service(service_name=service_name, service_description=f'Restart {service_name} docker service',
                           sh_content=sh_content, at_hour=at_hour, at_minute=at_minute)
