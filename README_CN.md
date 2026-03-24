@@ -91,6 +91,7 @@ llm-chat/
 ## 🛡️ 安全注意事项 (Security)
 * **HTTP 代理接口**：`/api/request` 是一个强大的代理工具。默认情况下，它会根据配置拦截对本地/私有 IP 的访问（建议在公网部署时将 `HTTP_REQUEST_BLOCK_LOCAL_IP` 设为 `True`）。
 * **跨域策略 (CORS)**：当前配置允许所有来源 (`*`)。在生产环境中，请务必将其限制为特定的域名。
+* **剪贴板与访问方式**：浏览器仅在「安全上下文」下允许 `navigator.clipboard`（HTTPS，或 `localhost` 等例外）。若使用 `http://局域网IP` 打开页面，复制按钮会自动改用兼容方式；长期建议对站点启用 **HTTPS**。
 
 ---
 

@@ -91,6 +91,7 @@ llm-chat/
 ## 🛡️ Security Considerations
 * **HTTP Proxy API**: The `/api/request` endpoint is a powerful tool for proxying requests. By default, it blocks access to local/private IP addresses (`HTTP_REQUEST_BLOCK_LOCAL_IP = True` is recommended for public deployment).
 * **CORS Policy**: The current configuration allows all origins (`*`). For production, please restrict this to your specific domain.
+* **Clipboard vs access URL**: `navigator.clipboard` is only available in a **secure context** (HTTPS, or exceptions like `localhost`). If you open the app as `http://<LAN-IP>`, copy buttons use a legacy fallback automatically; prefer **HTTPS** for production.
 
 ---
 

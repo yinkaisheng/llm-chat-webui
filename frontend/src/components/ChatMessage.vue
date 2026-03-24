@@ -40,6 +40,7 @@
 
 <script setup>
 import { parseMarkdown } from '../utils/markdown';
+import { copyToClipboard } from '../utils/clipboard';
 import { t, locale } from '../utils/i18n';
 
 const props = defineProps({
@@ -66,7 +67,8 @@ const copyText = async (text) => {
       contentToCopy = text.filter(p => p.type === 'text').map(p => p.text).join('\n');
     }
     const trimmedText = contentToCopy ? String(contentToCopy).trim() : '';
-    await navigator.clipboard.writeText(trimmedText);
+    const ok = await copyToClipboard(trimmedText);
+    if (!ok) console.warn('Copy may have failed (non-secure context or blocked)');
   } catch (err) {
     console.error('Failed to copy', err);
   }
@@ -78,10 +80,15 @@ const handleCodeCopy = async (event) => {
     const rawCode = target.getAttribute('data-code');
     if (rawCode) {
       try {
-        await navigator.clipboard.writeText(decodeURIComponent(rawCode));
-        const originalText = target.innerText;
-        target.innerText = t('copied');
-        setTimeout(() => { target.innerText = originalText; }, 2000);
+        const code = decodeURIComponent(rawCode);
+        const ok = await copyToClipboard(code);
+        if (ok) {
+          const originalText = target.innerText;
+          target.innerText = t('copied');
+          setTimeout(() => { target.innerText = originalText; }, 2000);
+        } else {
+          console.warn('Code copy may have failed');
+        }
       } catch (err) {
         console.error('Failed to copy code snippet', err);
       }
