@@ -427,6 +427,14 @@ async def chat_completions(req: dict = Body(...), request: Request = None):
             if k not in payload:
                 payload[k] = v
 
+    # Keep behavior consistent with the frontend:
+    # - Non-stream requests must not include `stream_options` (some inference backends may error).
+    # - For stream requests, default to `include_usage: true` when the user didn't provide it.
+    if not payload.get("stream"):
+        payload.pop("stream_options", None)
+    elif "stream_options" not in payload:
+        payload["stream_options"] = {"include_usage": True}
+
     for k in ["temperature", "top_p", "max_tokens", "presence_penalty", "frequency_penalty"]:
         if k in req:
             payload[k] = req[k]

@@ -54,12 +54,21 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
     if (configForm.value.extra_params && configForm.value.extra_params.trim() !== '') {
       try { parsedExtraParams = JSON.parse(configForm.value.extra_params); } catch(e){ console.error("Failed to parse extra_params", e); }
     }
+    const extra = { ...parsedExtraParams };
+    // Drawer "streaming" toggle has priority: root-level `stream` wins,
+    // and we don't forward any `stream` from extra_params to upstream merge logic.
+    delete extra.stream;
+    if (!isStream) {
+      delete extra.stream_options;
+    } else if (extra.stream_options === undefined || extra.stream_options === null) {
+      extra.stream_options = { include_usage: true };
+    }
     return {
       base_url: configForm.value.base_url,
       model_name: configForm.value.model_name,
       api_key: configForm.value.api_key,
       system_prompt: configForm.value.system_prompt,
-      extra_params: parsedExtraParams,
+      extra_params: extra,
       messages: messagesArray,
       stream: isStream
     };
@@ -281,14 +290,15 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
                  const prev = streamState.currentMeta || {};
                  const useLlama = prev.from_llama_timings;
                  const f_ttft = streamState.currentMeta ? streamState.currentMeta.ttft : (finalMeta.total_time || 0);
+                 const preservedTokens = useLlama ? null : (finalMeta.total_tokens != null ? finalMeta.total_tokens : prev.total_tokens);
                  streamState.currentMeta = {
                    ...finalMeta,
                    ttft: f_ttft,
                    total_time: finalMeta.total_time,
                    total_chars: responseBuffer.length + reasoningBuffer.length,
                    speed_chars: finalMeta.total_time > 0 ? (responseBuffer.length + reasoningBuffer.length) / finalMeta.total_time : 0,
-                   total_tokens: useLlama ? null : (finalMeta.total_tokens !== undefined ? finalMeta.total_tokens : null),
-                   speed_tokens: useLlama ? null : (finalMeta.total_tokens && finalMeta.total_time > 0 ? (finalMeta.total_tokens / finalMeta.total_time) : null)
+                   total_tokens: preservedTokens,
+                   speed_tokens: useLlama ? null : (preservedTokens != null && finalMeta.total_time > 0 ? preservedTokens / finalMeta.total_time : null)
                  };
                  if (useLlama) {
                    streamState.currentMeta.predicted_n = prev.predicted_n;
@@ -303,6 +313,33 @@ export function useChat(currentSessionId, currentTitle, configForm, fetchSession
                   responseBuffer += "\n\n**Error:** " + data.error;
                   hasUnrenderedContent = true;
                   continue;
+                }
+                // vLLM / OpenAI: The last frame may contain only `usage` (empty `choices`),
+                // so we parse it separately to display token statistics.
+                if (data.usage && typeof data.usage === 'object' && !streamState.currentMeta?.from_llama_timings) {
+                  const u = data.usage;
+                  let totalTok = u.total_tokens;
+                  if (totalTok == null && (u.prompt_tokens != null || u.completion_tokens != null)) {
+                    totalTok = (Number(u.prompt_tokens) || 0) + (Number(u.completion_tokens) || 0);
+                  }
+                  if (totalTok != null) {
+                    if (!streamState.currentMeta) {
+                      streamState.currentMeta = {
+                        ttft: firstTokenTime ? (firstTokenTime - startTime) / 1000 : null,
+                        total_time: null,
+                        total_chars: responseBuffer.length + reasoningBuffer.length,
+                        speed_chars: 0,
+                        total_tokens: totalTok,
+                        speed_tokens: null
+                      };
+                    } else {
+                      streamState.currentMeta.total_tokens = totalTok;
+                      const wall = streamState.currentMeta.total_time;
+                      if (wall != null && wall > 0) {
+                        streamState.currentMeta.speed_tokens = totalTok / wall;
+                      }
+                    }
+                  }
                 }
                 const lt = data.timings;
                 if (lt && typeof lt === 'object' && (lt.predicted_n != null || lt.predicted_per_second != null)) {
