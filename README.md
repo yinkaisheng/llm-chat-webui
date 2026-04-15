@@ -115,4 +115,10 @@ llm-chat-webui/
 - [API Documentation (API 接口文档)](docs/api.md)
 - [Design Specification (设计规范)](docs/design.md)
 
+## 🔍 Implementation Notes (Multi-Profile)
+- Frontend profile state is centralized in `frontend/src/composables/useConfig.js` with `configList`, `currentIndex`, and `configForm`.
+- Local persistence keys are `llm_chat_configs` (profile array) and `llm_chat_config_index` (selected index).
+- During startup load, item `0` is always overwritten with the latest backend config (`isServer: true`) to keep the "Server profile" aligned with backend reality.
+- When loading a session, `App.vue` restores profile by matching `session.config_name` against `configList` names; if no match is found, current profile remains unchanged.
+
 

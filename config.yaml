@@ -5,6 +5,8 @@ system_prompt: "你是一个AI助手。"
 extra_params:
   temperature: 0.6
   top_k: 20
+  thinking_token_budget: 12000
   chat_template_kwargs:
     enable_thinking: true
-
+  stream_options:
+    include_usage: true

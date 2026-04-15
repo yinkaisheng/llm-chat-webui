@@ -115,4 +115,10 @@ llm-chat-webui/
 - [API 接口文档 (API Documentation)](docs/api.md)
 - [设计规范 (Design Specification)](docs/design_cn.md)
 
+## 🔍 实现补充说明（多模型配置）
+- 前端配置由 `frontend/src/composables/useConfig.js` 统一管理，核心状态为 `configList`、`currentIndex`、`configForm`。
+- 本地持久化使用 `localStorage`：`llm_chat_configs`（配置数组）与 `llm_chat_config_index`（当前索引）。
+- 启动加载时会强制把第 1 项覆盖为后端实时配置（`isServer: true`），保证“Server 配置”始终与后端一致。
+- 历史会话恢复时，`App.vue` 按 `session.config_name` 在 `configList` 中按名称匹配并切换；若未命中则保持当前配置不变。
+
 

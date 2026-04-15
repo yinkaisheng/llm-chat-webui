@@ -75,6 +75,7 @@
         <span class="success-msg" v-if="configSuccess">OK!</span>
         <button class="btn-cancel" @click="handleReset">{{ t('reset') }}</button>
         <button class="btn-save" @click="handleSave">{{ t('save') }}</button>
+        <button class="btn-save-close" @click="handleSaveAndClose">{{ t('saveAndClose') }}</button>
       </div>
     </div>
   </div>
@@ -161,13 +162,11 @@ const handleDeleteConfig = () => {
   }
 };
 
-const handleSave = () => {
+const validateSaveForm = () => {
   configError.value = '';
-  configSuccess.value = false;
-
   if (!localConfig.value.base_url || !localConfig.value.model_name) {
     configError.value = t('configRequired');
-    return;
+    return false;
   }
   try {
     if (localConfig.value.extra_params && localConfig.value.extra_params.trim() !== '') {
@@ -175,12 +174,26 @@ const handleSave = () => {
     }
   } catch (e) {
     configError.value = t('jsonError');
-    return;
+    return false;
   }
+  return true;
+};
+
+const handleSave = () => {
+  configSuccess.value = false;
+  if (!validateSaveForm()) return;
 
   emit('save', { ...localConfig.value });
   configSuccess.value = true;
   setTimeout(() => { configSuccess.value = false; }, 2000);
+};
+
+const handleSaveAndClose = () => {
+  configSuccess.value = false;
+  if (!validateSaveForm()) return;
+
+  emit('save', { ...localConfig.value });
+  emit('update:show', false);
 };
 
 const handleReset = () => {
@@ -392,6 +405,20 @@ defineExpose({ validate });
 }
 .btn-save:hover {
   background-color: var(--primary-hover);
+}
+.btn-save-close {
+  padding: 8px 16px;
+  border-radius: 6px;
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+  font-weight: 500;
+  border: 1px solid var(--primary-color);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+.btn-save-close:hover {
+  background-color: var(--primary-color);
+  color: white;
 }
 .btn-cancel {
   padding: 8px 16px;
