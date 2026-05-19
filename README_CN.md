@@ -7,7 +7,7 @@
 
 本项目采用 Vibe Coding 方式进行开发。
 
-**兼容性说明**：目前仅在通过 `vLLM` 与 `llama-server` 部署的 Qwen3.5 模型上完成测试。
+**兼容性说明**：目前仅在通过 `vLLM` 与 `llama-server` 部署的 Qwen3.5/3.6 模型上完成测试。
 
 **核心架构**：
 - **后端**：使用 **FastAPI** 异步框架，主要负责 LLM API 代理、配置管理及会话持久化。启动入口为 `llm_chat_server.py`。

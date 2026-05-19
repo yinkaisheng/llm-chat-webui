@@ -7,7 +7,7 @@ This is a chat web application based on a locally deployed Large Language Model 
 
 This project is developed with Vibe Coding.
 
-**Compatibility Note**: This project has only been tested with Qwen3.5 models deployed via `vLLM` and `llama-server`.
+**Compatibility Note**: This project has only been tested with Qwen3.5/3.6 models deployed via `vLLM` and `llama-server`.
 
 **Core Architecture**:
 - **Backend**: Built with **FastAPI** asynchronous framework, responsible for LLM API proxy, configuration management, and session persistence. The entry point is `llm_chat_server.py`.
